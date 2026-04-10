@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout
-from PySide6.QtGui import Qt
+from PySide6.QtGui import Qt, QFont
 
 
 class ShapeWidget(QWidget):
@@ -11,11 +11,6 @@ class ShapeWidget(QWidget):
         self.label = QLabel("半")
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.label)
-        style_sheet = """
-            QWidget {
-                background-color: #444444;
-                border: 2px solid red;
-                color: white;
-            }
-        """
-        self.setStyleSheet(style_sheet)
+        
+    def UpdateFont(self, fontHeight):
+        self.label.setFont(QFont("Arial", fontHeight))
