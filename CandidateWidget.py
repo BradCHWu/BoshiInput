@@ -14,3 +14,13 @@ class CandidateWidget(QWidget):
 
     def UpdateFont(self, fontHeight):
         self.label.setFont(QFont("Arial", fontHeight))
+
+    def Send(self, keyList):
+        if not keyList:
+            s = ""
+        elif len(keyList) == 1:
+            s = keyList[0]
+        else:
+            sList = [f"{c + 1}: {k}" for c, k in enumerate(keyList)]
+            s = " ".join(sList)
+        self.label.setText(s)

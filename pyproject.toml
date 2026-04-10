@@ -5,7 +5,8 @@ description = "個人製作的嘸蝦米輸入法"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "pynput>=1.8.1",
+    "keyboard>=0.13.5",
+    "pyperclip>=1.11.0",
     "pyside6>=6.11.0",
 ]
 

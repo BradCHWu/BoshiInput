@@ -1,34 +1,58 @@
-from pynput import keyboard
+import keyboard
+import pyperclip
+
 from PySide6.QtCore import QThread, Signal
 
 from JsonToBin import BinFileToJson
 
+
 class KeyboardManager(QThread):
-    key_signal = Signal(bool, list)
+    key_signal = Signal(list)
 
     def __init__(self, callback):
         super().__init__()
-
         self.mapping = BinFileToJson("liu.bin")
-        self.key = ""
-        self.key_signal.connect(callback)
+        self.buffer = ""
 
+        if callback:
+            self.key_signal.connect(callback)
 
-    def on_press(self, key):
-        send_done = False
-        try:
-            k = key.char
-        except:
-            k = None
-            if key == keyboard.Key.space:
-                send_done = True
+    def send_value(self, key):
+        pyperclip.copy(key)
+        keyboard.send("ctrl+v")
 
-        if k is not None:
-            self.key += k
-        
-        result = self.mapping.get(self.key)
-        self.key_signal.emit(send_done, result)
+    def send_clear(self):
+        self.buffer = ""
+        self.key_signal.emit([])
+
+    def on_key_event(self, event):
+        if event.event_type == "up":
+            return False
+
+        name = event.name
+        if len(name) == 1:
+            if name.isalpha():
+                self.buffer += name
+                result = self.mapping.get(self.buffer, [])
+                self.key_signal.emit(result)
+            elif name.isdigit():
+                result = self.mapping.get(self.buffer, [])
+                num = int(name)
+                if num <= len(result):
+                    self.send_value(result[num - 1])
+                self.send_clear()
+
+            return False
+        elif name == "space":
+            if not self.buffer:
+                return True
+            result = self.mapping.get(self.buffer, [])
+            if result:
+                self.send_value(result[0])
+            self.send_clear()
+            return False if result else True
+        return True
 
     def run(self):
-        with keyboard.Listener(on_press=self.on_press) as listener:
-            listener.join()
+        keyboard.hook(self.on_key_event, suppress=True)
+        keyboard.wait()

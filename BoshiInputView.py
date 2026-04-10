@@ -1,4 +1,3 @@
-import logging
 
 from PySide6.QtWidgets import (
     QSplitter,
@@ -20,7 +19,7 @@ class BoshiInputView(QWidget):
 
         self.listerner_thread = KeyboardManager(self._handle_keypress)
         self.listerner_thread.start()
-        
+
         self._languageWidget = LanguageWidget()
         self._shapeWidget = ShapeWidget()
         self._candidateWidget = CandidateWidget()
@@ -51,7 +50,5 @@ class BoshiInputView(QWidget):
             w = self._splitter.widget(i)
             w.UpdateFont(height)
 
-    def _handle_keypress(self, done, key):
-        logging.info(f"{done}")
-        for k in key:
-            logging.info(f"{k}")
+    def _handle_keypress(self, keyList):
+        self._splitter.widget(2).Send(keyList)
