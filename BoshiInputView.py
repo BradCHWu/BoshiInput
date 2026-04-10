@@ -1,3 +1,5 @@
+import logging
+
 from PySide6.QtWidgets import (
     QSplitter,
     QHBoxLayout,
@@ -5,6 +7,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
+from KeyboardManager import KeyboardManager
 
 from LanguageWidget import LanguageWidget
 from ShapeWidget import ShapeWidget
@@ -15,6 +18,9 @@ class BoshiInputView(QWidget):
     def __init__(self, parent):
         super().__init__(parent)
 
+        self.listerner_thread = KeyboardManager(self._handle_keypress)
+        self.listerner_thread.start()
+        
         self._languageWidget = LanguageWidget()
         self._shapeWidget = ShapeWidget()
         self._candidateWidget = CandidateWidget()
@@ -44,3 +50,8 @@ class BoshiInputView(QWidget):
         for i in range(self._splitter.count()):
             w = self._splitter.widget(i)
             w.UpdateFont(height)
+
+    def _handle_keypress(self, done, key):
+        logging.info(f"{done}")
+        for k in key:
+            logging.info(f"{k}")
