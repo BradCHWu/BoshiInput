@@ -5,6 +5,7 @@ from PySide6.QtGui import QAction
 from setting import LoadPNG, png_Boshi
 from Config import Config
 from CommonTool import fromQPoint, toQPoint
+from BoshiInputView import BoshiInputView
 
 
 class MainFrame(QMainWindow):
@@ -12,6 +13,8 @@ class MainFrame(QMainWindow):
         super().__init__()
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Tool)
         self.setWindowIcon(LoadPNG(png_Boshi))
+        self._view = BoshiInputView(self)
+        self.setCentralWidget(self._view)
 
         self._config = Config()
 
