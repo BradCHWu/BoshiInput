@@ -18,8 +18,6 @@ class CandidateWidget(QWidget):
     def Send(self, keyList):
         if not keyList:
             s = ""
-        elif len(keyList) == 1:
-            s = keyList[0]
         else:
             sList = [f"{c + 1}: {k}" for c, k in enumerate(keyList)]
             s = " ".join(sList)

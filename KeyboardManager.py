@@ -1,5 +1,7 @@
-import keyboard
-import pyperclip
+import logging
+import string
+
+from pynput import keyboard
 
 from PySide6.QtCore import QThread, Signal
 
@@ -11,48 +13,57 @@ class KeyboardManager(QThread):
 
     def __init__(self, callback):
         super().__init__()
+        self._valid_key = list(string.ascii_letters)
+        self._valid_key.extend([',', '.'])
         self.mapping = BinFileToJson("liu.bin")
         self.buffer = ""
-
+        self.key = None
+        self._controller = keyboard.Controller()
         if callback:
             self.key_signal.connect(callback)
 
-    def send_value(self, key):
-        pyperclip.copy(key)
-        keyboard.send("ctrl+v")
-
-    def send_clear(self):
-        self.buffer = ""
-        self.key_signal.emit([])
-
-    def on_key_event(self, event):
-        if event.event_type == "up":
-            return False
-
-        name = event.name
-        if len(name) == 1:
-            if name.isalpha():
-                self.buffer += name
-                result = self.mapping.get(self.buffer, [])
-                self.key_signal.emit(result)
-            elif name.isdigit():
-                result = self.mapping.get(self.buffer, [])
-                num = int(name)
-                if num <= len(result):
-                    self.send_value(result[num - 1])
-                self.send_clear()
-
-            return False
-        elif name == "space":
-            if not self.buffer:
-                return True
+    def on_press(self, key):
+        self.key = key
+        if hasattr(key, "char") and key.char in self._valid_key:
+            self.buffer += key.char
             result = self.mapping.get(self.buffer, [])
-            if result:
-                self.send_value(result[0])
-            self.send_clear()
-            return False if result else True
-        return True
+            self.key_signal.emit(result)
+            return True
+        return False 
 
     def run(self):
-        keyboard.hook(self.on_key_event, suppress=True)
-        keyboard.wait()
+        while True:
+            with keyboard.Listener(on_press=self.on_press, suppress=True) as listen:
+                listen.join()
+           
+            if self.key == keyboard.Key.space:
+                result = self.mapping.get(self.buffer, [])
+                if result:
+                    self._controller.type(result[0])
+                else:
+                    self._controller.tap(keyboard.Key.space)
+                self.buffer = ""
+                self.key_signal.emit([])
+
+            elif hasattr(self.key, "char") and self.key.char in string.digits:
+                result = self.mapping.get(self.buffer, [])
+                num = int(self.key.char)
+                if self.buffer and num <= len(result):
+                    self._controller.type(result[num - 1])
+                    self.buffer = ""
+                    self.key_signal.emit([])
+                else:
+                    self._controller.tap(self.key)
+
+            elif self.key == keyboard.Key.backspace:
+                if self.buffer:
+                    self.buffer = self.buffer[:-1]
+                    result = self.mapping.get(self.buffer, [])
+                    self.key_signal.emit(result)
+                else:
+                    self._controller.tap(keyboard.Key.backspace)
+
+            else:
+                if self.key is not None:
+                    self._controller.press(self.key)
+                    self._controller.release(self.key)
