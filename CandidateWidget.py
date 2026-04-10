@@ -11,5 +11,6 @@ class CandidateWidget(QWidget):
         self.label = QLabel("")
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.label)
+
     def UpdateFont(self, fontHeight):
         self.label.setFont(QFont("Arial", fontHeight))

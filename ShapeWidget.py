@@ -11,6 +11,6 @@ class ShapeWidget(QWidget):
         self.label = QLabel("半")
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.label)
-        
+
     def UpdateFont(self, fontHeight):
         self.label.setFont(QFont("Arial", fontHeight))

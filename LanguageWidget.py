@@ -11,9 +11,8 @@ class LanguageWidget(QWidget):
 
         self.label = QLabel("中")
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        
+
         layout.addWidget(self.label)
-       
 
     def UpdateFont(self, fontHeight):
         self.label.setFont(QFont("Arial", fontHeight))
