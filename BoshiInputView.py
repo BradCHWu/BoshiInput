@@ -9,6 +9,7 @@ from KeyboardManager import KeyboardManager
 
 from LanguageWidget import LanguageWidget
 from ShapeWidget import ShapeWidget
+from InputWidget import InputWidget
 from CandidateWidget import CandidateWidget
 
 
@@ -21,6 +22,7 @@ class BoshiInputView(QWidget):
 
         self._languageWidget = LanguageWidget()
         self._shapeWidget = ShapeWidget()
+        self._inputWidget = InputWidget()
         self._candidateWidget = CandidateWidget()
 
         style_sheet = """
@@ -34,10 +36,12 @@ class BoshiInputView(QWidget):
         self._splitter.setStyleSheet(style_sheet)
         self._splitter.addWidget(self._languageWidget)
         self._splitter.addWidget(self._shapeWidget)
+        self._splitter.addWidget(self._inputWidget)
         self._splitter.addWidget(self._candidateWidget)
         self._splitter.setStretchFactor(0, 1)
         self._splitter.setStretchFactor(1, 1)
-        self._splitter.setStretchFactor(2, 8)
+        self._splitter.setStretchFactor(2, 1)
+        self._splitter.setStretchFactor(3, 8)
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -49,5 +53,6 @@ class BoshiInputView(QWidget):
             w = self._splitter.widget(i)
             w.UpdateFont(height)
 
-    def _handle_keypress(self, keyList):
-        self._splitter.widget(2).Send(keyList)
+    def _handle_keypress(self, key, keyList):
+        self._splitter.widget(2).Send(key)
+        self._splitter.widget(3).Send(keyList)

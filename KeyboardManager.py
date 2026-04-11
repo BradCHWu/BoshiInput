@@ -9,7 +9,7 @@ from JsonToBin import BinFileToJson
 
 
 class KeyboardManager(QThread):
-    _key_signal = Signal(list)
+    _key_signal = Signal(str, list)
 
     def __init__(self, callback):
         super().__init__()
@@ -31,14 +31,7 @@ class KeyboardManager(QThread):
         if callback:
             self._key_signal.connect(callback)
 
-    def _is_char(self, key, valid_key):
-        if not hasattr(key, "char"):
-            return None
 
-        if key.char not in valid_key:
-            return None
-
-        return key.char
 
 
     def _has_modifier(self, key, pressed):
@@ -85,7 +78,10 @@ class KeyboardManager(QThread):
             return ret
 
         try:
-            key = self._is_char(_key, self._valid_key)
+            if hasattr(_key, "char") and _key.char in self._valid_key:
+                key = _key.char
+            else:
+                key = None
             if key:
                 self._buffer += key
                 self._query_word()
@@ -101,23 +97,22 @@ class KeyboardManager(QThread):
         while True:
             self._keyboard_listener()
 
+            key_ = self._key
             if not self._buffer:
                 self._process_keys()
-            elif self._key == keyboard.Key.space:
+            elif key_ == keyboard.Key.space:
                 logging.debug("Detect space")
                 self._report_word(1)
-            elif self._key == keyboard.Key.backspace:
+            elif key_ == keyboard.Key.backspace:
                 if self._buffer:
                     self._buffer = self._buffer[:-1]
                     self._query_word()
                 else:
                     self._controller.tap(keyboard.Key.backspace)
-            elif hasattr(self._key, "char"):
-                key = self._key.char
-                if key in self._report_key:
-                    logging.debug(f"Detect report key {key}")
-                    num = int(key)
-                    self._report_word(num)
+            elif hasattr(key_, "char") and key_.char in self._report_key:
+                key = key_.char
+                num = int(key)
+                self._report_word(num)
 
     def _keyboard_listener(self):
         press = self.on_press
@@ -127,7 +122,7 @@ class KeyboardManager(QThread):
 
     def _query_word(self):
         result = self._mapping.get(self._buffer, [])
-        self._key_signal.emit(result)
+        self._key_signal.emit(self._buffer, result)
 
     def _report_word(self, num: int):
         result = self._mapping.get(self._buffer, [])
@@ -138,4 +133,4 @@ class KeyboardManager(QThread):
                 logging.info(f"message: {num}")
                 self._controller.type(f"{num}")
         self._buffer = ""
-        self._key_signal.emit([])
+        self._key_signal.emit(self._buffer, [])
