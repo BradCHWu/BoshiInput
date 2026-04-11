@@ -31,9 +31,6 @@ class KeyboardManager(QThread):
         if callback:
             self._key_signal.connect(callback)
 
-
-
-
     def _has_modifier(self, key, pressed):
         mapping = {
             keyboard.Key.ctrl: keyboard.Key.ctrl,
@@ -55,7 +52,7 @@ class KeyboardManager(QThread):
 
     def _process_keys(self):
         active_mods = [mod for mod, active in self._modifier.items() if active]
-       
+
         for mod in active_mods:
             self._controller.press(mod)
         try:

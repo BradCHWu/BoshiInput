@@ -38,10 +38,8 @@ class BoshiInputView(QWidget):
         self._splitter.addWidget(self._shapeWidget)
         self._splitter.addWidget(self._inputWidget)
         self._splitter.addWidget(self._candidateWidget)
-        self._splitter.setStretchFactor(0, 1)
-        self._splitter.setStretchFactor(1, 1)
-        self._splitter.setStretchFactor(2, 1)
-        self._splitter.setStretchFactor(3, 8)
+        size = [30, 30, 60, 200]
+        self._splitter.setSizes(size)
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -51,6 +49,7 @@ class BoshiInputView(QWidget):
         height = max(10, self.height() * 0.7)
         for i in range(self._splitter.count()):
             w = self._splitter.widget(i)
+            w.setFixedWidth(size[i])
             w.UpdateFont(height)
 
     def _handle_keypress(self, key, keyList):

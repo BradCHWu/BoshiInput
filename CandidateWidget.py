@@ -8,8 +8,9 @@ class CandidateWidget(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
+        _center = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
         self.label = QLabel("")
-        self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.label.setAlignment(_center)
         layout.addWidget(self.label)
 
     def UpdateFont(self, fontHeight):
