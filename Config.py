@@ -1,5 +1,6 @@
 import configparser
 import os
+import logging
 
 
 class Config:
@@ -18,8 +19,28 @@ class Config:
 
     def _default_config(self):
         self._config["General"] = {
+            "Logging": ["Debug", "Info", "Warning", "Error"],
+            "LoggingLevel": "Debug",
             "Position": "100,100",
         }
+
+    def LoggingLevel(self):
+        general = self._config["General"]
+        if general["LoggingLevel"] not in general["Logging"]:
+            general["LoggingLevel"] = "Info"
+            self.Save()
+
+        level = logging.INFO
+        match general["LoggingLevel"]:
+            case "Debug":
+                level = logging.DEBUG
+            case "Info":
+                level = logging.INFO
+            case "Warning":
+                level = logging.WARNING
+            case "Error":
+                level = logging.ERROR
+        return level
 
     def SetPosition(self, pos: str):
         self._config.set("General", "Position", pos)

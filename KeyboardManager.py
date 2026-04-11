@@ -9,61 +9,133 @@ from JsonToBin import BinFileToJson
 
 
 class KeyboardManager(QThread):
-    key_signal = Signal(list)
+    _key_signal = Signal(list)
 
     def __init__(self, callback):
         super().__init__()
         self._valid_key = list(string.ascii_letters)
-        self._valid_key.extend([',', '.'])
-        self.mapping = BinFileToJson("liu.bin")
-        self.buffer = ""
-        self.key = None
+        self._valid_key.extend(list(",.'[]"))
+        self._report_key = list(string.digits)
+
+        self._mapping = BinFileToJson("liu.bin")
+
+        self._buffer = ""
+        self._key = None
+        self._modifier = {
+            keyboard.Key.ctrl: False,
+            keyboard.Key.alt: False,
+            keyboard.Key.shift: False,
+            keyboard.Key.cmd: False,
+        }
         self._controller = keyboard.Controller()
         if callback:
-            self.key_signal.connect(callback)
+            self._key_signal.connect(callback)
 
-    def on_press(self, key):
-        self.key = key
-        if hasattr(key, "char") and key.char in self._valid_key:
-            self.buffer += key.char
-            result = self.mapping.get(self.buffer, [])
-            self.key_signal.emit(result)
-            return True
-        return False 
+    def _is_char(self, key, valid_key):
+        if not hasattr(key, "char"):
+            return None
+
+        if key.char not in valid_key:
+            return None
+
+        return key.char
+
+
+    def _has_modifier(self, key, pressed):
+        mapping = {
+            keyboard.Key.ctrl: keyboard.Key.ctrl,
+            keyboard.Key.ctrl_l: keyboard.Key.ctrl,
+            keyboard.Key.ctrl_r: keyboard.Key.ctrl,
+            keyboard.Key.alt: keyboard.Key.alt,
+            keyboard.Key.alt_l: keyboard.Key.alt,
+            keyboard.Key.alt_r: keyboard.Key.alt,
+            keyboard.Key.shift: keyboard.Key.shift,
+            keyboard.Key.shift_l: keyboard.Key.shift,
+            keyboard.Key.shift_r: keyboard.Key.shift,
+            keyboard.Key.cmd: keyboard.Key.cmd,
+            keyboard.Key.cmd_l: keyboard.Key.cmd,
+            keyboard.Key.cmd_r: keyboard.Key.cmd,
+        }
+        ret = mapping.get(key, None)
+        if ret is not None:
+            self._modifier[ret] = pressed
+
+    def _process_keys(self):
+        active_mods = [mod for mod, active in self._modifier.items() if active]
+       
+        for mod in active_mods:
+            self._controller.press(mod)
+        try:
+            self._controller.press(self._key)
+            self._controller.release(self._key)
+        except Exception as e:
+            logging.error(f"Send taret {self._key} failed: {e}")
+
+        for mod in active_mods:
+            self._controller.release(mod)
+        return True
+
+    def on_press(self, _key):
+        self._key = _key
+        ret = False
+        self._has_modifier(_key, True)
+
+        if any(self._modifier.values()):
+            logging.debug(f"Specific key {_key} pressed, exit...")
+            return ret
+
+        try:
+            key = self._is_char(_key, self._valid_key)
+            if key:
+                self._buffer += key
+                self._query_word()
+                ret = True
+        except AttributeError:
+            ret = False
+        return ret
+
+    def on_release(self, key):
+        self._has_modifier(key, False)
 
     def run(self):
         while True:
-            with keyboard.Listener(on_press=self.on_press, suppress=True) as listen:
-                listen.join()
-           
-            if self.key == keyboard.Key.space:
-                result = self.mapping.get(self.buffer, [])
-                if result:
-                    self._controller.type(result[0])
-                else:
-                    self._controller.tap(keyboard.Key.space)
-                self.buffer = ""
-                self.key_signal.emit([])
+            self._keyboard_listener()
 
-            elif hasattr(self.key, "char") and self.key.char in string.digits:
-                result = self.mapping.get(self.buffer, [])
-                num = int(self.key.char)
-                if self.buffer and num <= len(result):
-                    self._controller.type(result[num - 1])
-                    self.buffer = ""
-                    self.key_signal.emit([])
-                else:
-                    self._controller.tap(self.key)
-
-            elif self.key == keyboard.Key.backspace:
-                if self.buffer:
-                    self.buffer = self.buffer[:-1]
-                    result = self.mapping.get(self.buffer, [])
-                    self.key_signal.emit(result)
+            if not self._buffer:
+                self._process_keys()
+            elif self._key == keyboard.Key.space:
+                logging.debug("Detect space")
+                self._report_word(1)
+            elif self._key == keyboard.Key.backspace:
+                if self._buffer:
+                    self._buffer = self._buffer[:-1]
+                    self._query_word()
                 else:
                     self._controller.tap(keyboard.Key.backspace)
+            elif hasattr(self._key, "char"):
+                key = self._key.char
+                if key in self._report_key:
+                    logging.debug(f"Detect report key {key}")
+                    num = int(key)
+                    self._report_word(num)
 
+    def _keyboard_listener(self):
+        press = self.on_press
+        release = self.on_release
+        with keyboard.Listener(press, release, suppress=True) as listen:
+            listen.join()
+
+    def _query_word(self):
+        result = self._mapping.get(self._buffer, [])
+        self._key_signal.emit(result)
+
+    def _report_word(self, num: int):
+        result = self._mapping.get(self._buffer, [])
+        if result:
+            if num <= len(result):
+                self._controller.type(result[num - 1])
             else:
-                if self.key is not None:
-                    self._controller.press(self.key)
-                    self._controller.release(self.key)
+                logging.info(f"message: {num}")
+                self._controller.type(f"{num}")
+        self._buffer = ""
+        self._key_signal.emit([])

@@ -1,3 +1,5 @@
+import logging
+
 from PySide6.QtWidgets import QMainWindow, QSystemTrayIcon, QMenu, QApplication
 from PySide6.QtCore import Qt, QPoint, QRect, QSize
 from PySide6.QtGui import QAction
@@ -11,15 +13,23 @@ from BoshiInputView import BoshiInputView
 class MainFrame(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Tool)
+        window_style = Qt.WindowType.FramelessWindowHint | Qt.WindowType.Tool
+        self.setWindowFlags(window_style)
         self.setWindowIcon(LoadPNG(png_Boshi))
+
+        self._config = Config()
+        self._initial_logging()
+
         self._view = BoshiInputView(self)
         self.setCentralWidget(self._view)
 
-        self._config = Config()
-
         self._restorePosition()
         self._create_tray_icon()
+
+    def _initial_logging(self):
+        logging_level = self._config.LoggingLevel()
+        logging_format = "[%(levelname)s] %(lineno)s %(message)s"
+        logging.basicConfig(level=logging_level, format=logging_format)
 
     def _restorePosition(self):
         self._drag_position = QPoint()
