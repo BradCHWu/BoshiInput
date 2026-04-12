@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout
-from PySide6.QtGui import Qt, QFont
+from PySide6.QtGui import Qt, QFont, QFontMetrics
+
 
 
 class ShapeWidget(QWidget):
@@ -14,3 +15,7 @@ class ShapeWidget(QWidget):
 
     def UpdateFont(self, fontHeight):
         self.label.setFont(QFont("Arial", fontHeight))
+
+    def WidthWithChar(self):
+        m = QFontMetrics(self.label.font())
+        return m.horizontalAdvance("XX")

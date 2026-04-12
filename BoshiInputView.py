@@ -1,3 +1,5 @@
+import logging
+
 from PySide6.QtWidgets import (
     QSplitter,
     QHBoxLayout,
@@ -5,6 +7,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
+from Config import config_manager
 from KeyboardManager import KeyboardManager
 
 from LanguageWidget import LanguageWidget
@@ -49,9 +52,15 @@ class BoshiInputView(QWidget):
         height = max(10, self.height() * 0.7)
         for i in range(self._splitter.count()):
             w = self._splitter.widget(i)
-            w.setFixedWidth(size[i])
             w.UpdateFont(height)
+            width = w.WidthWithChar()
+            logging.debug(f"Width = {width}")
+            w.setFixedWidth(width)
 
     def _handle_keypress(self, key, keyList):
-        self._splitter.widget(2).Send(key)
-        self._splitter.widget(3).Send(keyList)
+        if key == "SWITCH":
+            config_manager.NextLanguage()
+            self._splitter.widget(0).ShowLanguage()
+        else:
+            self._splitter.widget(2).Send(key)
+            self._splitter.widget(3).Send(keyList)
