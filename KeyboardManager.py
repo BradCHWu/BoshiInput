@@ -1,12 +1,10 @@
 import logging
-import string
 
 from pynput import keyboard
 
 from PySide6.QtCore import QThread, Signal
 
 from JsonToBin import BinFileToJson
-
 from Config import config_manager, LanguageSetting
 
 
@@ -17,9 +15,8 @@ class KeyboardManager(QThread):
     def __init__(self, callback):
         super().__init__()
 
-        self._valid_key = list(string.ascii_letters)
-        self._valid_key.extend(list(",.'[]"))
-        self._report_key = list(string.digits)
+        self._valid_key = list("abcdefghijklmnopqrstuvwxyz,.'[]")
+        self._report_key = list("123456789")
 
         self._mapping = BinFileToJson("liu.bin")
 
@@ -38,7 +35,7 @@ class KeyboardManager(QThread):
     def _keyboard_listener(self):
         press = self._on_press
         release = self._on_release
-        with keyboard.Listener(press, release, suppress=True) as listen:
+        with keyboard.Listener(press, release, True) as listen:
             listen.join()
 
     def _set_modifier(self, key, pressed):
