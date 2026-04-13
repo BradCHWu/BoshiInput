@@ -61,9 +61,6 @@ def main(filename):
             k2 = rootkey[bit24 >> 19]
             k3 = rootkey[(bit24 >> 14) & 0x1F]
 
-            flag_unknown = get_bits(i2, 1, ci, bytes_data)
-            flag_sp = get_bits(i3, 1, ci, bytes_data)
-
             # 組合 Key 並去除空白 (模仿 trim)
             full_key = (k0 + k1 + k2 + k3).strip()
 

@@ -62,7 +62,7 @@ class Config:
         return level
 
     def LoggingFile(self):
-        return self._config["General"]["LoggingFile"]
+        return self._config.getboolean("General", "LoggingFile")
 
     def SetPosition(self, pos: str):
         self._config.set("General", "Position", pos)
