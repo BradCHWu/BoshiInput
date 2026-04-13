@@ -70,7 +70,7 @@ fn handle_event(event: Event) -> Option<Event> {
 
             // 特殊指定組合鍵：Ctrl + Space (即使有修飾鍵也要攔截並告知)
             if key == Key::Space && CTRL_PRESSED.load(Ordering::SeqCst) {
-                send_to_python("CTRL_SPACE");
+                send_to_python("Ctrl+Space");
                 return None;
             }
 

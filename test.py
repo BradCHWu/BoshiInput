@@ -4,7 +4,7 @@ import time
 
 # 1. 載入 Rust 編譯好的 DLL
 # Windows 通常是 .dll，Linux 是 .so
-dll_path = os.path.abspath("./keyboard.dll") 
+dll_path = os.path.abspath("./keyboard.dll")
 try:
     kbd_lib = ctypes.CDLL(dll_path)
 except OSError as e:
@@ -15,11 +15,12 @@ except OSError as e:
 # 參數：None (回傳值), ctypes.c_char_p (接收到的字串指標)
 CALLBACK_FUNC = ctypes.CFUNCTYPE(None, ctypes.c_char_p)
 
+
 # 3. 實作 Python 端的邏輯：接收來自 Rust 的按鍵訊息
 def keyboard_event_handler(msg_ptr):
     # 將 C 字串轉換為 Python 字串
-    message = msg_ptr.decode('utf-8')
-    
+    message = msg_ptr.decode("utf-8")
+
     # 根據 Rust 傳過來的字串進行邏輯處理
     if message == "CTRL_SPACE":
         print("\n[系統] 偵測到 Ctrl + Space！")
@@ -34,6 +35,7 @@ def keyboard_event_handler(msg_ptr):
         print(f"{message}", end="", flush=True)
     else:
         print(f"\n[收到的其他訊息]: {message}")
+
 
 # 4. 轉換為 C 可用的回調對象
 # ⚠️ 注意：必須將此對象存在變數中，防止被 Python 的垃圾回收機制回收

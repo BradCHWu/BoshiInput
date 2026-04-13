@@ -18,51 +18,87 @@ from InputWidget import InputWidget
 from CandidateWidget import CandidateWidget
 from JsonToBin import BinFileToJson
 
+
 class KeyboardManager(QObject):
     _key_signal = Signal(str, list)
+
     def __init__(self, callback):
         super().__init__()
 
-        dll_path = os.path.abspath("./keyboard.dll")        
+        dll_path = os.path.abspath("./keyboard.dll")
         try:
             kbd_lib = ctypes.CDLL(dll_path)
         except OSError as e:
             logging.error(f"Failed to load keyboard.dll from {dll_path}: {e}")
+
         CALLBACK_FUNC = ctypes.CFUNCTYPE(None, ctypes.c_char_p)
         self.c_callback = CALLBACK_FUNC(self.keyboard_event_handler)
         kbd_lib.start_keyboard_hook(self.c_callback)
         self._controller = keyboard.Controller()
 
-        self._mapping  = BinFileToJson("liu.bin")
+        self._mapping = BinFileToJson("liu.bin")
         self._buffer = ""
         self._key = None
         if callback:
             self._key_signal.connect(callback)
 
+    def _post_word(self, buf):
+        self._buffer = buf
+        result = self._mapping.get(buf, [])
+        self._key_signal.emit(buf, result)
+
+    def _output_word(self, buf, num):
+        result = self._mapping.get(buf, [])
+        if result:
+            self._controller.type(result[num - 1])
+        self._post_word("")
+
     def keyboard_event_handler(self, msg_ptr):
-        message = msg_ptr.decode('utf-8')
-        
-        if message == "CTRL_SPACE":
+        message = msg_ptr.decode("utf-8")
+
+        if message == "Ctrl+Space":
             logging.info("\n[系統] 偵測到 Ctrl + Space！")
-        elif message == "ESC":
-            self._buffer = ""
-            self._key_signal.emit("", [])
-        elif message == "BACKSPACE":
+        elif message == "ESC":  # 清空候選區
+            self._post_word("")
+        elif message == "BACKSPACE":  # 候選區有值，調整候選區，沒值則執行倒退
             if self._buffer:
-                self._buffer = self._buffer[:-1]
-                self._key_signal.emit("", self._mapping.get(self._buffer, []))
+                self._post_word(self._buffer[:-1])
             else:
                 self._controller.tap(keyboard.Key.backspace)
-        elif message == "SPACE":
-            result = self._mapping.get(self._buffer, [])
-            self._key_signal.emit("", result[0])
-            self._controller.type(result[0])
-            logging.info(f"Get word {result[0]}")
-            self._buffer = ""
-        elif len(message) == 1:
-            self._buffer += message
-            self._key_signal.emit(message, self._mapping.get(self._buffer, []))
-
+        elif message == "SPACE":  # 輸出候選區的第一個數值
+            self._output_word(self._buffer, 1)
+        else:
+            mapping = {
+                "comma": ",",
+                "dot": ".",
+                "leftbracket": "[",
+                "rightbracket": "]",
+                "quote": "'",
+            }
+            digit_mapping = {
+                "NUM1": "1",
+                "NUM2": "2",
+                "NUM3": "3",
+                "NUM4": "4",
+                "NUM5": "5",
+                "NUM6": "6",
+                "NUM7": "7",
+                "NUM8": "8",
+                "NUM9": "9",
+            }
+            value = digit_mapping.get(message)
+            if value:  # 有數字的話，就是選項
+                num = int(value)
+                if self._buffer:
+                    self._output_word(self._buffer, num)
+                else:
+                    self._post_word("")
+            else:
+                value = mapping.get(message)
+                if value:
+                    self._post_word(self._buffer + value)
+                elif message.isalpha():
+                    self._post_word(self._buffer + message)
 
 
 class BoshiInputView(QWidget):
@@ -112,5 +148,3 @@ class BoshiInputView(QWidget):
         else:
             self._splitter.widget(2).Send(key)
             self._splitter.widget(3).Send(keyList)
-
-
