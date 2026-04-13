@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QObject, Signal
 from pynput import keyboard
 
-from Config import config_manager
+from Config import config_manager, LanguageSetting
 
 from LanguageWidget import LanguageWidget
 from ShapeWidget import ShapeWidget
@@ -21,6 +21,25 @@ from JsonToBin import BinFileToJson
 
 class KeyboardManager(QObject):
     _key_signal = Signal(str, list)
+
+    mapping = {
+        "comma": ",",
+        "dot": ".",
+        "leftbracket": "[",
+        "rightbracket": "]",
+        "quote": "'",
+    }
+    digit_mapping = {
+        "NUM1": "1",
+        "NUM2": "2",
+        "NUM3": "3",
+        "NUM4": "4",
+        "NUM5": "5",
+        "NUM6": "6",
+        "NUM7": "7",
+        "NUM8": "8",
+        "NUM9": "9",
+    }
 
     def __init__(self, callback):
         super().__init__()
@@ -55,9 +74,19 @@ class KeyboardManager(QObject):
 
     def keyboard_event_handler(self, msg_ptr):
         message = msg_ptr.decode("utf-8")
-
         if message == "Ctrl+Space":
-            logging.info("\n[系統] 偵測到 Ctrl + Space！")
+            self._key_signal.emit("SWITCH", [])
+        
+        logging.info(f"{config_manager.Language()}")
+        comma_value = self.mapping.get(message, None)
+        digit_value = self.digit_mapping.get(message, None)        
+        if config_manager.Language() == LanguageSetting.ENGLISH:
+            if len(message) == 1:
+                self._controller.tap(message)
+            elif comma_value:
+                self._controller.tap(comma_value)
+            elif digit_value:
+                self._controller.tap(digit_value)
         elif message == "ESC":  # 清空候選區
             self._post_word("")
         elif message == "BACKSPACE":  # 候選區有值，調整候選區，沒值則執行倒退
@@ -67,38 +96,16 @@ class KeyboardManager(QObject):
                 self._controller.tap(keyboard.Key.backspace)
         elif message == "SPACE":  # 輸出候選區的第一個數值
             self._output_word(self._buffer, 1)
-        else:
-            mapping = {
-                "comma": ",",
-                "dot": ".",
-                "leftbracket": "[",
-                "rightbracket": "]",
-                "quote": "'",
-            }
-            digit_mapping = {
-                "NUM1": "1",
-                "NUM2": "2",
-                "NUM3": "3",
-                "NUM4": "4",
-                "NUM5": "5",
-                "NUM6": "6",
-                "NUM7": "7",
-                "NUM8": "8",
-                "NUM9": "9",
-            }
-            value = digit_mapping.get(message)
-            if value:  # 有數字的話，就是選項
-                num = int(value)
-                if self._buffer:
-                    self._output_word(self._buffer, num)
-                else:
-                    self._post_word("")
+        elif digit_value: # 有數字的話，就是選項
+            num = int(digit_value)
+            if self._buffer:
+                self._output_word(self._buffer, num)
             else:
-                value = mapping.get(message)
-                if value:
-                    self._post_word(self._buffer + value)
-                elif message.isalpha():
-                    self._post_word(self._buffer + message)
+                self._post_word("")
+        elif comma_value:
+            self._post_word(self._buffer + comma_value)
+        elif message.isalpha():
+            self._post_word(self._buffer + message)
 
 
 class BoshiInputView(QWidget):
