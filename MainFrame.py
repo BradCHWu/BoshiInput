@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QMainWindow, QSystemTrayIcon, QMenu, QApplication
 from PySide6.QtCore import Qt, QPoint, QRect, QSize
 from PySide6.QtGui import QAction
 
-from setting import LoadPNG, png_Boshi
+from setting import LoadPNG, png_Boshi, Name
 from Config import config_manager
 from CommonTool import fromQPoint, toQPoint
 from BoshiInputView import BoshiInputView
@@ -23,6 +23,7 @@ class MainFrame(QMainWindow):
 
         self._restorePosition()
         self._create_tray_icon()
+        logging.info(f"Application {Name()} initialize")
 
     def _window_style(self):
         window_style = Qt.WindowType.FramelessWindowHint
@@ -31,9 +32,17 @@ class MainFrame(QMainWindow):
         return window_style
 
     def _initial_logging(self):
+        logging_file = None
+        if config_manager.LoggingFile():
+            logging_file = f"{Name()}.log"
         logging_level = config_manager.LoggingLevel()
         logging_format = "[%(levelname)s] %(lineno)s %(message)s"
-        logging.basicConfig(level=logging_level, format=logging_format)
+        logging.basicConfig(
+            filename=logging_file,
+            filemode="a",
+            level=logging_level,
+            format=logging_format,
+        )
 
     def _restorePosition(self):
         self._drag_position = QPoint()
@@ -55,6 +64,7 @@ class MainFrame(QMainWindow):
 
     def closeEvent(self, event):
         config_manager.Save()
+        logging.info(f"Application {Name()} closed")
         return super().closeEvent(event)
 
     def mousePressEvent(self, event):
@@ -70,5 +80,6 @@ class MainFrame(QMainWindow):
             gp = event.globalPosition().toPoint()
             self.move(gp - self._drag_position)
             config_manager.SetPosition(fromQPoint(self.geometry().topLeft()))
+            logging.debug(f"Move {Name()} to {config_manager.Position()}")
 
         return super().mouseMoveEvent(event)

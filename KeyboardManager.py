@@ -8,7 +8,6 @@ from JsonToBin import BinFileToJson
 from Config import config_manager, LanguageSetting
 
 
-
 class KeyboardManager(QThread):
     _key_signal = Signal(str, list)
 

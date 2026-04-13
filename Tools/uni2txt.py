@@ -1,9 +1,10 @@
 import os
 import json
-import sys
+
 
 def get_int16(addr, bytes_data):
     return bytes_data[addr] | (bytes_data[addr + 1] << 8)
+
 
 def get_bits(start, nbit, i, bytes_data):
     if nbit in [1, 2, 4]:
@@ -23,9 +24,10 @@ def get_bits(start, nbit, i, bytes_data):
     else:
         raise ValueError("Unsupported bit size")
 
-def main(filename):  
+
+def main(filename):
     try:
-        with open(filename, 'rb') as f:
+        with open(filename, "rb") as f:
             bytes_data = list(f.read())
     except FileNotFoundError:
         print(f"Error: {filename} not found.")
@@ -43,8 +45,8 @@ def main(filename):
     for i in range(1024):
         k0 = rootkey[i // 32]
         k1 = rootkey[i % 32]
-        
-        if k0 == ' ':
+
+        if k0 == " ":
             continue
 
         # 獲取索引區間
@@ -54,34 +56,34 @@ def main(filename):
         for ci in range(start_ci, end_ci):
             bit24 = get_bits(i4, 24, ci, bytes_data)
             hi = get_bits(i1, 2, ci, bytes_data)
-            lo = bit24 & 0x3fff
+            lo = bit24 & 0x3FFF
 
             k2 = rootkey[bit24 >> 19]
-            k3 = rootkey[(bit24 >> 14) & 0x1f]
-            
+            k3 = rootkey[(bit24 >> 14) & 0x1F]
+
             flag_unknown = get_bits(i2, 1, ci, bytes_data)
             flag_sp = get_bits(i3, 1, ci, bytes_data)
 
             # 組合 Key 並去除空白 (模仿 trim)
             full_key = (k0 + k1 + k2 + k3).strip()
-            
+
             char = chr((hi << 14) | lo)
-            
+
             # 輸出結果
             if full_key not in output_dict:
                 output_dict[full_key] = []
             output_dict[full_key].append(f"{char}")
             # print(f"[{full_key}]\t{char}")
             step += 1
-    
+
     out_file = os.path.splitext(os.path.abspath(filename))[0] + ".json"
     print(f"{out_file}")
     with open(out_file, "w", encoding="utf-8") as ofile:
         json.dump(output_dict, ofile, indent=4, ensure_ascii=False)
+
 
 if __name__ == "__main__":
     for name in os.scandir("TAB"):
         if os.path.splitext(name.path)[-1] != ".tab":
             continue
         main(name.path)
-    

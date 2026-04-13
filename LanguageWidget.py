@@ -3,6 +3,7 @@ from PySide6.QtGui import Qt, QFont, QFontMetrics
 
 from Config import config_manager
 
+
 class LanguageWidget(QWidget):
     def __init__(self):
         super().__init__()

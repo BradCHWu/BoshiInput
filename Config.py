@@ -39,6 +39,7 @@ class Config:
         self._config["General"] = {
             "Logging": ["Debug", "Info", "Warning", "Error"],
             "LoggingLevel": "Debug",
+            "LoggingFile": False,
             "Position": "100,100",
         }
 
@@ -59,6 +60,9 @@ class Config:
             case "Error":
                 level = logging.ERROR
         return level
+
+    def LoggingFile(self):
+        return self._config["General"]["LoggingFile"]
 
     def SetPosition(self, pos: str):
         self._config.set("General", "Position", pos)
@@ -83,6 +87,7 @@ class Config:
     def Save(self) -> None:
         with open(self._file_path, "w", encoding="utf-8") as ofile:
             self._config.write(ofile)
+
 
 # 建立一個全域變數供其他模組匯入
 config_manager = Config()
