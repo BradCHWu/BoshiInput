@@ -1,27 +1,75 @@
 import logging
+import ctypes
+import os
 
 from PySide6.QtWidgets import (
     QSplitter,
     QHBoxLayout,
     QWidget,
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QObject, Signal
+from pynput import keyboard
 
 from Config import config_manager
-from KeyboardManager import KeyboardManager
 
 from LanguageWidget import LanguageWidget
 from ShapeWidget import ShapeWidget
 from InputWidget import InputWidget
 from CandidateWidget import CandidateWidget
+from JsonToBin import BinFileToJson
+
+class KeyboardManager(QObject):
+    _key_signal = Signal(str, list)
+    def __init__(self, callback):
+        super().__init__()
+
+        dll_path = os.path.abspath("./keyboard.dll")        
+        try:
+            kbd_lib = ctypes.CDLL(dll_path)
+        except OSError as e:
+            logging.error(f"Failed to load keyboard.dll from {dll_path}: {e}")
+        CALLBACK_FUNC = ctypes.CFUNCTYPE(None, ctypes.c_char_p)
+        self.c_callback = CALLBACK_FUNC(self.keyboard_event_handler)
+        kbd_lib.start_keyboard_hook(self.c_callback)
+        self._controller = keyboard.Controller()
+
+        self._mapping  = BinFileToJson("liu.bin")
+        self._buffer = ""
+        self._key = None
+        if callback:
+            self._key_signal.connect(callback)
+
+    def keyboard_event_handler(self, msg_ptr):
+        message = msg_ptr.decode('utf-8')
+        
+        if message == "CTRL_SPACE":
+            logging.info("\n[系統] 偵測到 Ctrl + Space！")
+        elif message == "ESC":
+            self._buffer = ""
+            self._key_signal.emit("", [])
+        elif message == "BACKSPACE":
+            if self._buffer:
+                self._buffer = self._buffer[:-1]
+                self._key_signal.emit("", self._mapping.get(self._buffer, []))
+            else:
+                self._controller.tap(keyboard.Key.backspace)
+        elif message == "SPACE":
+            result = self._mapping.get(self._buffer, [])
+            self._key_signal.emit("", result[0])
+            self._controller.type(result[0])
+            logging.info(f"Get word {result[0]}")
+            self._buffer = ""
+        elif len(message) == 1:
+            self._buffer += message
+            self._key_signal.emit(message, self._mapping.get(self._buffer, []))
+
 
 
 class BoshiInputView(QWidget):
     def __init__(self, parent):
         super().__init__(parent)
 
-        self.listerner_thread = KeyboardManager(self._handle_keypress)
-        self.listerner_thread.start()
+        self._keyboard_manager = KeyboardManager(self._handle_keypress)
 
         self._languageWidget = LanguageWidget()
         self._shapeWidget = ShapeWidget()
@@ -64,3 +112,5 @@ class BoshiInputView(QWidget):
         else:
             self._splitter.widget(2).Send(key)
             self._splitter.widget(3).Send(keyList)
+
+
