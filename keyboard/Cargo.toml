@@ -1,0 +1,10 @@
+[package]
+name = "keyboard"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+rdev = { version = "0.5.3", features = ["unstable_grab"] }
