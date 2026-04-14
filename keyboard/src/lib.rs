@@ -63,9 +63,6 @@ fn handle_event(event: Event) -> Option<Event> {
                     ALT_PRESSED.store(true, Ordering::SeqCst);
                     return Some(event);
                 }
-                _ => {}
-            }
-            match key {
                 Key::ShiftLeft | Key::ShiftRight => {
                     SHIFT_PROCESSED.store(true, Ordering::SeqCst);
                     return Some(event);
@@ -74,8 +71,8 @@ fn handle_event(event: Event) -> Option<Event> {
             }
 
             // 判斷組合鍵狀態
-            let is_modifier_active =
-                CTRL_PRESSED.load(Ordering::SeqCst) || ALT_PRESSED.load(Ordering::SeqCst);
+            let ctrl_active = CTRL_PRESSED.load(Ordering::SeqCst);
+            let alt_active = ALT_PRESSED.load(Ordering::SeqCst);
             let shift_active = SHIFT_PROCESSED.load(Ordering::SeqCst);
 
             // 特殊指定組合鍵：Ctrl + Space (即使有修飾鍵也要攔截並告知)
@@ -117,7 +114,7 @@ fn handle_event(event: Event) -> Option<Event> {
                 | Key::Quote
                 | Key::LeftBracket
                 | Key::RightBracket => {
-                    if !is_modifier_active && !shift_active {
+                    if !ctrl_active && !alt_active && !shift_active {
                         let msg = format!("{:?}", key).replace("Key", "").to_lowercase();
                         send_to_python(&msg);
                         return None;
@@ -137,7 +134,7 @@ fn handle_event(event: Event) -> Option<Event> {
                 | Key::Num9
                 | Key::Backspace
                 | Key::Space => {
-                    if !is_modifier_active {
+                    if !ctrl_active && !alt_active && !shift_active {
                         let msg = format!("{:?}", key).to_uppercase();
                         send_to_python(&msg);
                         return None;
@@ -163,15 +160,11 @@ fn handle_event(event: Event) -> Option<Event> {
                 Key::Alt | Key::AltGr => {
                     ALT_PRESSED.store(false, Ordering::SeqCst);
                 }
-                _ => {}
-            }
-            match key {
                 Key::ShiftLeft | Key::ShiftRight => {
                     SHIFT_PROCESSED.store(false, Ordering::SeqCst);
                 }
                 _ => {}
             }
-
             Some(event)
         }
         _ => Some(event),
