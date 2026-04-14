@@ -1,4 +1,5 @@
 import logging
+from enum import Enum, auto
 
 from PySide6.QtWidgets import (
     QSplitter,
@@ -16,16 +17,25 @@ from CandidateWidget import CandidateWidget
 from KeyboardManager import KeyboardManager
 
 
+class ViewWidget(Enum):
+    LANGUAGE = auto()
+    SHAPE = auto()
+    INPUT = auto()
+    CANDIDATE = auto()
+
+
 class BoshiInputView(QWidget):
     def __init__(self, parent):
         super().__init__(parent)
 
         self._keyboard_manager = KeyboardManager(self._handle_keypress)
 
-        self._languageWidget = LanguageWidget()
-        self._shapeWidget = ShapeWidget()
-        self._inputWidget = InputWidget()
-        self._candidateWidget = CandidateWidget()
+        self._widget = {
+            ViewWidget.LANGUAGE: LanguageWidget(),
+            ViewWidget.SHAPE: ShapeWidget(),
+            ViewWidget.INPUT: InputWidget(),
+            ViewWidget.CANDIDATE: CandidateWidget(),
+        }
 
         style_sheet = """
         QSplitter::handle {
@@ -36,12 +46,8 @@ class BoshiInputView(QWidget):
         self._splitter = QSplitter(Qt.Orientation.Horizontal)
         self._splitter.setHandleWidth(2)
         self._splitter.setStyleSheet(style_sheet)
-        self._splitter.addWidget(self._languageWidget)
-        self._splitter.addWidget(self._shapeWidget)
-        self._splitter.addWidget(self._inputWidget)
-        self._splitter.addWidget(self._candidateWidget)
-        size = [30, 30, 60, 200]
-        self._splitter.setSizes(size)
+        for widget in self._widget.values():
+            self._splitter.addWidget(widget)
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -49,17 +55,16 @@ class BoshiInputView(QWidget):
         layout.addWidget(self._splitter)
 
         height = max(10, self.height() * 0.7)
-        for i in range(self._splitter.count()):
-            w = self._splitter.widget(i)
-            w.UpdateFont(height)
-            width = w.WidthWithChar()
+        for widget in self._widget.values():
+            widget.UpdateFont(height)
+            width = widget.WidthWithChar()
             logging.debug(f"Width = {width}")
-            w.setFixedWidth(width)
+            widget.setFixedWidth(width)
 
     def _handle_keypress(self, key, keyList):
         if key == "SWITCH":
             config_manager.NextLanguage()
-            self._splitter.widget(0).ShowLanguage()
+            self._widget[ViewWidget.LANGUAGE].ShowLanguage()
         else:
-            self._splitter.widget(2).Send(key)
-            self._splitter.widget(3).Send(keyList)
+            self._widget[ViewWidget.INPUT].Send(key)
+            self._widget[ViewWidget.CANDIDATE].Send(keyList)

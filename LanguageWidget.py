@@ -25,3 +25,8 @@ class LanguageWidget(QWidget):
 
     def ShowLanguage(self):
         self.label.setText(config_manager.ShowLanguage())
+
+    def mousePressEvent(self, event):
+        config_manager.NextLanguage()
+        self.ShowLanguage()
+        return super().mousePressEvent(event)
