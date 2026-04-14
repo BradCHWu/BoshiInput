@@ -1,4 +1,4 @@
-use rdev::{grab, Event, EventType, Key};
+use rdev::{Event, EventType, Key, grab};
 use std::ffi::CString;
 use std::os::raw::c_char;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -74,7 +74,8 @@ fn handle_event(event: Event) -> Option<Event> {
             }
 
             // 判斷組合鍵狀態
-            let is_modifier_active = CTRL_PRESSED.load(Ordering::SeqCst) || ALT_PRESSED.load(Ordering::SeqCst);
+            let is_modifier_active =
+                CTRL_PRESSED.load(Ordering::SeqCst) || ALT_PRESSED.load(Ordering::SeqCst);
             let shift_active = SHIFT_PROCESSED.load(Ordering::SeqCst);
 
             // 特殊指定組合鍵：Ctrl + Space (即使有修飾鍵也要攔截並告知)
@@ -85,13 +86,37 @@ fn handle_event(event: Event) -> Option<Event> {
 
             match key {
                 // 1. 指定攔截的字母與符號 (單純按下時攔截)
-                Key::KeyA | Key::KeyB | Key::KeyC | Key::KeyD | Key::KeyE | 
-                Key::KeyF | Key::KeyG | Key::KeyH | Key::KeyI | Key::KeyJ | 
-                Key::KeyK | Key::KeyL | Key::KeyM | Key::KeyN | Key::KeyO | 
-                Key::KeyP | Key::KeyQ | Key::KeyR | Key::KeyS | Key::KeyT | 
-                Key::KeyU | Key::KeyV | Key::KeyW | Key::KeyX | Key::KeyY | 
-                Key::KeyZ | Key::Comma | Key::Dot | Key::Quote| 
-                Key::LeftBracket | Key::RightBracket  => {
+                Key::KeyA
+                | Key::KeyB
+                | Key::KeyC
+                | Key::KeyD
+                | Key::KeyE
+                | Key::KeyF
+                | Key::KeyG
+                | Key::KeyH
+                | Key::KeyI
+                | Key::KeyJ
+                | Key::KeyK
+                | Key::KeyL
+                | Key::KeyM
+                | Key::KeyN
+                | Key::KeyO
+                | Key::KeyP
+                | Key::KeyQ
+                | Key::KeyR
+                | Key::KeyS
+                | Key::KeyT
+                | Key::KeyU
+                | Key::KeyV
+                | Key::KeyW
+                | Key::KeyX
+                | Key::KeyY
+                | Key::KeyZ
+                | Key::Comma
+                | Key::Dot
+                | Key::Quote
+                | Key::LeftBracket
+                | Key::RightBracket => {
                     if !is_modifier_active && !shift_active {
                         let msg = format!("{:?}", key).replace("Key", "").to_lowercase();
                         send_to_python(&msg);
@@ -101,9 +126,17 @@ fn handle_event(event: Event) -> Option<Event> {
                 }
 
                 // 2. 功能鍵：1-9, Backspace, Space (單純按下時攔截)
-                Key::Num1 | Key::Num2 | Key::Num3 | Key::Num4 | Key::Num5 |
-                Key::Num6 | Key::Num7 | Key::Num8 | Key::Num9 |
-                Key::Backspace | Key::Space => {
+                Key::Num1
+                | Key::Num2
+                | Key::Num3
+                | Key::Num4
+                | Key::Num5
+                | Key::Num6
+                | Key::Num7
+                | Key::Num8
+                | Key::Num9
+                | Key::Backspace
+                | Key::Space => {
                     if !is_modifier_active {
                         let msg = format!("{:?}", key).to_uppercase();
                         send_to_python(&msg);
