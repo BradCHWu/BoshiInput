@@ -7,7 +7,7 @@ from pynput import keyboard
 from PySide6.QtCore import QObject, Signal
 
 from Config import config_manager, LanguageSetting
-from JsonToBin import BinFileToJson
+from FileConvert import BinFileToJson
 
 
 class KeyboardInputHandler(QObject):
