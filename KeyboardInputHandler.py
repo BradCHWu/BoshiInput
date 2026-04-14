@@ -13,16 +13,16 @@ from JsonToBin import BinFileToJson
 class KeyboardInputHandler(QObject):
     HOOK_LIBRARY_PATH = "./keyboard.dll" if os.name == "nt" else "./keyboard.so"
     DEFAULT_MAPPING_FILE = "liu.bin"
-    _key_signal = Signal(str, list)
+    wordCandidateSignal = Signal(str, list)
 
-    mapping = {
+    punctuationMapping = {
         "comma": ",",
         "dot": ".",
         "leftbracket": "[",
         "rightbracket": "]",
         "quote": "'",
     }
-    digit_mapping = {
+    digitKeyMapping = {
         "NUM1": "1",
         "NUM2": "2",
         "NUM3": "3",
@@ -48,77 +48,77 @@ class KeyboardInputHandler(QObject):
             logging.error(f"{self.HOOK_LIBRARY_PATH} not found")
 
         CALLBACK_FUNC = ctypes.CFUNCTYPE(None, ctypes.c_char_p)
-        self.c_callback = CALLBACK_FUNC(self.keyboard_event_handler)
+        self.c_callback = CALLBACK_FUNC(self.handleKeyboardEvent)
         kbd_lib.start_keyboard_hook(self.c_callback)
-        self._controller = keyboard.Controller()
+        self.keyboardController = keyboard.Controller()
 
         if os.path.exists(self.DEFAULT_MAPPING_FILE):
-            self._mapping = BinFileToJson("liu.bin")
+            self.wordMapping = BinFileToJson("liu.bin")
         else:
-            self._mapping = None
+            self.wordMapping = None
             logging.error(f"{self.DEFAULT_MAPPING_FILE} not found")
-        self._buffer = ""
-        self._key = None
+        self.inputBuffer = ""
+        self.lastKeyPressed = None
         if callback:
-            self._key_signal.connect(callback)
+            self.wordCandidateSignal.connect(callback)
 
-    def _post_word(self, buf):
-        self._buffer = buf
-        result = self._mapping.get(buf, [])
-        self._key_signal.emit(buf, result)
+    def updateCandidates(self, buf):
+        self.inputBuffer = buf
+        result = self.wordMapping.get(buf, [])
+        self.wordCandidateSignal.emit(buf, result)
 
-    def _output_word(self, buf, num):
-        result = self._mapping.get(buf, [])
+    def commitCandidate(self, buf, num):
+        result = self.wordMapping.get(buf, [])
         if result:
-            self._controller.type(result[num - 1])
-        self._post_word("")
+            self.keyboardController.type(result[num - 1])
+        self.updateCandidates("")
 
-    def _bypass_all(self, message):
-        comma_value = self.mapping.get(message, None)
-        digit_value = self.digit_mapping.get(message, None)
+    def sendRawKeyEvent(self, message):
+        comma_value = self.punctuationMapping.get(message, None)
+        digit_value = self.digitKeyMapping.get(message, None)
         if message == "ESC":
-            self._controller.tap(keyboard.Key.esc)
+            self.keyboardController.tap(keyboard.Key.esc)
         elif message == "BACKSPACE":
-            self._controller.tap(keyboard.Key.backspace)
+            self.keyboardController.tap(keyboard.Key.backspace)
         elif message == "SPACE":
-            self._controller.tap(keyboard.Key.space)
+            self.keyboardController.tap(keyboard.Key.space)
         elif digit_value:
-            self._controller.tap(digit_value)
+            self.keyboardController.tap(digit_value)
         elif comma_value:
-            self._controller.tap(comma_value)
+            self.keyboardController.tap(comma_value)
         elif message.isalpha():
-            self._controller.tap(message)
+            self.keyboardController.tap(message)
 
-    def keyboard_event_handler(self, msg_ptr):
+    def handleKeyboardEvent(self, msg_ptr):
         message = msg_ptr.decode("utf-8")
         if message == "Ctrl+Space":
-            self._post_word("")
-            self._key_signal.emit("SWITCH", [])
+            self.updateCandidates("")
+            self.wordCandidateSignal.emit("SWITCH", [])
 
         logging.info(f"{config_manager.Language()}")
-        comma_value = self.mapping.get(message, None)
-        digit_value = self.digit_mapping.get(message, None)
+        comma_value = self.punctuationMapping.get(message, None)
+        digit_value = self.digitKeyMapping.get(message, None)
         if config_manager.Language() == LanguageSetting.ENGLISH:
-            self._bypass_all(message)
+            self.sendRawKeyEvent(message)
         elif message == "ESC":  # 清空候選區
-            self._post_word("")
+            self.updateCandidates("")
         elif message == "BACKSPACE":  # 候選區有值，調整候選區，沒值則執行倒退
-            if self._buffer:
-                self._post_word(self._buffer[:-1])
+            if self.inputBuffer:
+                self.updateCandidates(self.inputBuffer[:-1])
             else:
-                self._controller.tap(keyboard.Key.backspace)
+                self.keyboardController.tap(keyboard.Key.backspace)
         elif message == "SPACE":  # 輸出候選區的第一個數值
-            if self._buffer:
-                self._output_word(self._buffer, 1)
+            if self.inputBuffer:
+                self.commitCandidate(self.inputBuffer, 1)
             else:
-                self._controller.tap(keyboard.Key.space)
+                self.keyboardController.tap(keyboard.Key.space)
         elif digit_value:  # 有數字的話，就是選項
             num = int(digit_value)
-            if self._buffer:
-                self._output_word(self._buffer, num)
+            if self.inputBuffer:
+                self.commitCandidate(self.inputBuffer, num)
             else:
-                self._post_word("")
+                self.updateCandidates("")
         elif comma_value:
-            self._post_word(self._buffer + comma_value)
+            self.updateCandidates(self.inputBuffer + comma_value)
         elif message.isalpha():
-            self._post_word(self._buffer + message)
+            self.updateCandidates(self.inputBuffer + message)
