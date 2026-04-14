@@ -8,6 +8,7 @@ use std::thread;
 static HOOK_RUNNING: AtomicBool = AtomicBool::new(false);
 static CTRL_PRESSED: AtomicBool = AtomicBool::new(false);
 static ALT_PRESSED: AtomicBool = AtomicBool::new(false);
+static SHIFT_PROCESSED: AtomicBool = AtomicBool::new(false);
 
 // Python 回調定義
 type PythonCallback = extern "C" fn(*const c_char);
@@ -64,9 +65,17 @@ fn handle_event(event: Event) -> Option<Event> {
                 }
                 _ => {}
             }
+            match key {
+                Key::ShiftLeft | Key::ShiftRight => {
+                    SHIFT_PROCESSED.store(true, Ordering::SeqCst);
+                    return Some(event);
+                }
+                _ => {}
+            }
 
             // 判斷組合鍵狀態
             let is_modifier_active = CTRL_PRESSED.load(Ordering::SeqCst) || ALT_PRESSED.load(Ordering::SeqCst);
+            let shift_active = SHIFT_PROCESSED.load(Ordering::SeqCst);
 
             // 特殊指定組合鍵：Ctrl + Space (即使有修飾鍵也要攔截並告知)
             if key == Key::Space && CTRL_PRESSED.load(Ordering::SeqCst) {
@@ -83,7 +92,7 @@ fn handle_event(event: Event) -> Option<Event> {
                 Key::KeyU | Key::KeyV | Key::KeyW | Key::KeyX | Key::KeyY | 
                 Key::KeyZ | Key::Comma | Key::Dot | Key::Quote| 
                 Key::LeftBracket | Key::RightBracket  => {
-                    if !is_modifier_active {
+                    if !is_modifier_active && !shift_active {
                         let msg = format!("{:?}", key).replace("Key", "").to_lowercase();
                         send_to_python(&msg);
                         return None;
@@ -123,6 +132,13 @@ fn handle_event(event: Event) -> Option<Event> {
                 }
                 _ => {}
             }
+            match key {
+                Key::ShiftLeft | Key::ShiftRight => {
+                    SHIFT_PROCESSED.store(false, Ordering::SeqCst);
+                }
+                _ => {}
+            }
+
             Some(event)
         }
         _ => Some(event),
