@@ -63,6 +63,18 @@ class KeyboardManager(QObject):
             self._controller.type(result[num - 1])
         self._post_word("")
 
+    def _bypass_all(self, message):
+        comma_value = self.mapping.get(message, None)
+        digit_value = self.digit_mapping.get(message, None)        
+        if len(message) == 1:
+            self._controller.tap(message)
+        elif message == "SPACE":
+            self._controller.tap(keyboard.Key.space)
+        elif comma_value:
+            self._controller.tap(comma_value)
+        elif digit_value:
+            self._controller.tap(digit_value)
+
     def keyboard_event_handler(self, msg_ptr):
         message = msg_ptr.decode("utf-8")
         if message == "Ctrl+Space":
@@ -72,12 +84,7 @@ class KeyboardManager(QObject):
         comma_value = self.mapping.get(message, None)
         digit_value = self.digit_mapping.get(message, None)
         if config_manager.Language() == LanguageSetting.ENGLISH:
-            if len(message) == 1:
-                self._controller.tap(message)
-            elif comma_value:
-                self._controller.tap(comma_value)
-            elif digit_value:
-                self._controller.tap(digit_value)
+            self._bypass_all(message)
         elif message == "ESC":  # 清空候選區
             self._post_word("")
         elif message == "BACKSPACE":  # 候選區有值，調整候選區，沒值則執行倒退
@@ -86,7 +93,10 @@ class KeyboardManager(QObject):
             else:
                 self._controller.tap(keyboard.Key.backspace)
         elif message == "SPACE":  # 輸出候選區的第一個數值
-            self._output_word(self._buffer, 1)
+            if self._buffer:
+                self._output_word(self._buffer, 1)
+            else:
+                self._controller.tap(keyboard.Key.space)
         elif digit_value:  # 有數字的話，就是選項
             num = int(digit_value)
             if self._buffer:
