@@ -56,11 +56,17 @@ class MainFrame(QMainWindow):
         self._tray = QSystemTrayIcon(LoadPNG(png_Boshi), self)
 
         menu = QMenu()
-        exit_action = QAction("關閉", self)
+        hide_action = QAction("Hide", self)
+        hide_action.triggered.connect(self._hide)
+        exit_action = QAction("Close", self)
         exit_action.triggered.connect(QApplication.instance().quit)
+        menu.addAction(hide_action)
         menu.addAction(exit_action)
         self._tray.setContextMenu(menu)
         self._tray.show()
+
+    def _hide(self, evnet):
+        self.hide() if self.isVisible() else self.show()
 
     def closeEvent(self, event):
         config_manager.Save()
