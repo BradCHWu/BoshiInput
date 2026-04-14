@@ -11,6 +11,8 @@ from JsonToBin import BinFileToJson
 
 
 class KeyboardInputHandler(QObject):
+    HOOK_LIBRARY_PATH = "./keyboard.dll" if os.name == "nt" else "./keyboard.so"
+    DEFAULT_MAPPING_FILE = "liu.bin"
     _key_signal = Signal(str, list)
 
     mapping = {
@@ -35,18 +37,26 @@ class KeyboardInputHandler(QObject):
     def __init__(self, callback):
         super().__init__()
 
-        dll_path = os.path.abspath("./keyboard.dll")
-        try:
-            kbd_lib = ctypes.CDLL(dll_path)
-        except OSError as e:
-            logging.error(f"Failed to load keyboard.dll from {dll_path}: {e}")
+        if os.path.exists(self.HOOK_LIBRARY_PATH):
+            dll_path = os.path.abspath(self.HOOK_LIBRARY_PATH)
+            try:
+                kbd_lib = ctypes.CDLL(dll_path)
+            except OSError as e:
+                logging.error(f"Failed to load {self.HOOK_LIBRARY_PATH}: {e}")
+        else:
+            dll_path = None
+            logging.error(f"{self.HOOK_LIBRARY_PATH} not found")
 
         CALLBACK_FUNC = ctypes.CFUNCTYPE(None, ctypes.c_char_p)
         self.c_callback = CALLBACK_FUNC(self.keyboard_event_handler)
         kbd_lib.start_keyboard_hook(self.c_callback)
         self._controller = keyboard.Controller()
 
-        self._mapping = BinFileToJson("liu.bin")
+        if os.path.exists(self.DEFAULT_MAPPING_FILE):
+            self._mapping = BinFileToJson("liu.bin")
+        else:
+            self._mapping = None
+            logging.error(f"{self.DEFAULT_MAPPING_FILE} not found")
         self._buffer = ""
         self._key = None
         if callback:
