@@ -25,6 +25,6 @@ class CandidateWidget(QWidget):
         if not keyList:
             s = ""
         else:
-            sList = [f"{c + 1}: {k}" for c, k in enumerate(keyList)]
+            sList = [f"{c}: {k}" for c, k in enumerate(keyList)]
             s = " ".join(sList)
         self.label.setText(s)

@@ -23,6 +23,7 @@ class KeyboardInputHandler(QObject):
         "quote": "'",
     }
     digitKeyMapping = {
+        "NUM0": "0",
         "NUM1": "1",
         "NUM2": "2",
         "NUM3": "3",
@@ -70,22 +71,20 @@ class KeyboardInputHandler(QObject):
     def commitCandidate(self, buf, num):
         result = self.wordMapping.get(buf, [])
         if result:
-            self.keyboardController.type(result[num - 1])
+            self.keyboardController.type(result[num])
         self.updateCandidates("")
 
-    def sendRawKeyEvent(self, message):
-        comma_value = self.punctuationMapping.get(message, None)
-        digit_value = self.digitKeyMapping.get(message, None)
+    def sendRawKeyEvent(self, message, comma, digit):
         if message == "ESC":
             self.keyboardController.tap(keyboard.Key.esc)
         elif message == "BACKSPACE":
             self.keyboardController.tap(keyboard.Key.backspace)
         elif message == "SPACE":
             self.keyboardController.tap(keyboard.Key.space)
-        elif digit_value:
-            self.keyboardController.tap(digit_value)
-        elif comma_value:
-            self.keyboardController.tap(comma_value)
+        elif digit:
+            self.keyboardController.tap(digit)
+        elif comma:
+            self.keyboardController.tap(comma)
         elif message.isalpha():
             self.keyboardController.tap(message)
 
@@ -99,7 +98,7 @@ class KeyboardInputHandler(QObject):
         comma_value = self.punctuationMapping.get(message, None)
         digit_value = self.digitKeyMapping.get(message, None)
         if config_manager.Language() == LanguageSetting.ENGLISH:
-            self.sendRawKeyEvent(message)
+            self.sendRawKeyEvent(message, comma_value, digit_value)
         elif message == "ESC":  # 清空候選區
             self.updateCandidates("")
         elif message == "BACKSPACE":  # 候選區有值，調整候選區，沒值則執行倒退
@@ -109,7 +108,7 @@ class KeyboardInputHandler(QObject):
                 self.keyboardController.tap(keyboard.Key.backspace)
         elif message == "SPACE":  # 輸出候選區的第一個數值
             if self.inputBuffer:
-                self.commitCandidate(self.inputBuffer, 1)
+                self.commitCandidate(self.inputBuffer, 0)
             else:
                 self.keyboardController.tap(keyboard.Key.space)
         elif digit_value:  # 有數字的話，就是選項
