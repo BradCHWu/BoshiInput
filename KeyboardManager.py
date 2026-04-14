@@ -65,15 +65,19 @@ class KeyboardManager(QObject):
 
     def _bypass_all(self, message):
         comma_value = self.mapping.get(message, None)
-        digit_value = self.digit_mapping.get(message, None)        
-        if len(message) == 1:
-            self._controller.tap(message)
+        digit_value = self.digit_mapping.get(message, None)
+        if message == "ESC":
+            self._controller.tap(keyboard.Key.esc)
+        elif message == "BACKSPACE":
+            self._controller.tap(keyboard.Key.backspace)
         elif message == "SPACE":
             self._controller.tap(keyboard.Key.space)
-        elif comma_value:
-            self._controller.tap(comma_value)
         elif digit_value:
             self._controller.tap(digit_value)
+        elif comma_value:
+            self._controller.tap(comma_value)
+        if message.isalpha():
+            self._controller.tap(message)
 
     def keyboard_event_handler(self, msg_ptr):
         message = msg_ptr.decode("utf-8")

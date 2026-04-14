@@ -81,8 +81,8 @@ fn handle_event(event: Event) -> Option<Event> {
                 Key::KeyK | Key::KeyL | Key::KeyM | Key::KeyN | Key::KeyO | 
                 Key::KeyP | Key::KeyQ | Key::KeyR | Key::KeyS | Key::KeyT | 
                 Key::KeyU | Key::KeyV | Key::KeyW | Key::KeyX | Key::KeyY | 
-                Key::KeyZ | Key::Comma | Key::Dot | Key::LeftBracket | 
-                Key::RightBracket | Key::SemiColon | Key::Quote => {
+                Key::KeyZ | Key::Comma | Key::Dot | Key::Quote| 
+                Key::LeftBracket | Key::RightBracket  => {
                     if !is_modifier_active {
                         let msg = format!("{:?}", key).replace("Key", "").to_lowercase();
                         send_to_python(&msg);
