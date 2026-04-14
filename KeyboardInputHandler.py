@@ -10,7 +10,7 @@ from Config import config_manager, LanguageSetting
 from JsonToBin import BinFileToJson
 
 
-class KeyboardManager(QObject):
+class KeyboardInputHandler(QObject):
     _key_signal = Signal(str, list)
 
     mapping = {

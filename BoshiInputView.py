@@ -14,7 +14,7 @@ from LanguageWidget import LanguageWidget
 from ShapeWidget import ShapeWidget
 from InputWidget import InputWidget
 from CandidateWidget import CandidateWidget
-from KeyboardManager import KeyboardManager
+from KeyboardInputHandler import KeyboardInputHandler
 
 
 class ViewWidget(Enum):
@@ -28,7 +28,7 @@ class BoshiInputView(QWidget):
     def __init__(self, parent):
         super().__init__(parent)
 
-        self._keyboard_manager = KeyboardManager(self._handle_keypress)
+        self._keyboard_manager = KeyboardInputHandler(self._handle_keypress)
 
         self._widget = {
             ViewWidget.LANGUAGE: LanguageWidget(),
