@@ -76,12 +76,13 @@ class KeyboardManager(QObject):
             self._controller.tap(digit_value)
         elif comma_value:
             self._controller.tap(comma_value)
-        if message.isalpha():
+        elif message.isalpha():
             self._controller.tap(message)
 
     def keyboard_event_handler(self, msg_ptr):
         message = msg_ptr.decode("utf-8")
         if message == "Ctrl+Space":
+            self._post_word("")
             self._key_signal.emit("SWITCH", [])
 
         logging.info(f"{config_manager.Language()}")
