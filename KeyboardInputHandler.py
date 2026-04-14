@@ -70,7 +70,7 @@ class KeyboardInputHandler(QObject):
 
     def commitCandidate(self, buf, num):
         result = self.wordMapping.get(buf, [])
-        if result:
+        if result and num < len(result):
             self.keyboardController.type(result[num])
         self.updateCandidates("")
 
@@ -116,6 +116,7 @@ class KeyboardInputHandler(QObject):
             if self.inputBuffer:
                 self.commitCandidate(self.inputBuffer, num)
             else:
+                self.keyboardController.tap(digit_value)
                 self.updateCandidates("")
         elif comma_value:
             self.updateCandidates(self.inputBuffer + comma_value)
