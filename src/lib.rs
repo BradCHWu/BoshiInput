@@ -9,6 +9,7 @@ static HOOK_RUNNING: AtomicBool = AtomicBool::new(false);
 static CTRL_PRESSED: AtomicBool = AtomicBool::new(false);
 static ALT_PRESSED: AtomicBool = AtomicBool::new(false);
 static SHIFT_PROCESSED: AtomicBool = AtomicBool::new(false);
+static WIN_PROCESSED: AtomicBool = AtomicBool::new(false);
 
 // Python 回調定義
 type PythonCallback = extern "C" fn(*const c_char);
@@ -67,6 +68,9 @@ fn handle_event(event: Event) -> Option<Event> {
                     SHIFT_PROCESSED.store(true, Ordering::SeqCst);
                     return Some(event);
                 }
+                Key::MetaLeft | Key::MetaRight => {
+                    WIN_PROCESSED.store(true, Ordering::SeqCst);
+                }
                 _ => {}
             }
 
@@ -74,6 +78,7 @@ fn handle_event(event: Event) -> Option<Event> {
             let ctrl_active = CTRL_PRESSED.load(Ordering::SeqCst);
             let alt_active = ALT_PRESSED.load(Ordering::SeqCst);
             let shift_active = SHIFT_PROCESSED.load(Ordering::SeqCst);
+            let win_active = WIN_PROCESSED.load(Ordering::SeqCst);
 
             // 特殊指定組合鍵：Ctrl + Space (即使有修飾鍵也要攔截並告知)
             if key == Key::Space && CTRL_PRESSED.load(Ordering::SeqCst) {
@@ -114,7 +119,7 @@ fn handle_event(event: Event) -> Option<Event> {
                 | Key::Quote
                 | Key::LeftBracket
                 | Key::RightBracket => {
-                    if !ctrl_active && !alt_active && !shift_active {
+                    if !ctrl_active && !alt_active && !shift_active && !win_active {
                         let msg = format!("{:?}", key).replace("Key", "").to_lowercase();
                         send_to_python(&msg);
                         return None;
@@ -135,7 +140,7 @@ fn handle_event(event: Event) -> Option<Event> {
                 | Key::Num9
                 | Key::Backspace
                 | Key::Space => {
-                    if !ctrl_active && !alt_active && !shift_active {
+                    if !ctrl_active && !alt_active && !shift_active && !win_active {
                         let msg = format!("{:?}", key).to_uppercase();
                         send_to_python(&msg);
                         return None;
@@ -163,6 +168,9 @@ fn handle_event(event: Event) -> Option<Event> {
                 }
                 Key::ShiftLeft | Key::ShiftRight => {
                     SHIFT_PROCESSED.store(false, Ordering::SeqCst);
+                }
+                Key::MetaLeft | Key::MetaRight => {
+                    WIN_PROCESSED.store(false, Ordering::SeqCst);
                 }
                 _ => {}
             }
