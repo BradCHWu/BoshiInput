@@ -6,7 +6,7 @@ from pynput import keyboard
 
 from PySide6.QtCore import QObject, Signal
 
-from Config import config_manager, LanguageSetting
+from Config import config_manager
 from FileConvert import BinFileToJson
 
 
@@ -74,52 +74,43 @@ class KeyboardInputHandler(QObject):
             self.keyboardController.type(result[num])
         self.updateCandidates("")
 
-    def sendRawKeyEvent(self, message, comma, digit):
-        if message == "ESC":
-            # self.keyboardController.tap(keyboard.Key.esc)
-            pass
-        elif message == "BACKSPACE":
-            self.keyboardController.tap(keyboard.Key.backspace)
-        elif message == "SPACE":
-            self.keyboardController.tap(keyboard.Key.space)
-        elif digit:
-            self.keyboardController.tap(digit)
-        elif comma:
-            self.keyboardController.tap(comma)
-        elif message.isalpha():
-            self.keyboardController.tap(message)
-
     def handleKeyboardEvent(self, msg_ptr):
         message = msg_ptr.decode("utf-8")
         if message == "Ctrl+Space":
             self.updateCandidates("")
             self.wordCandidateSignal.emit("SWITCH", [])
+            return
 
-        logging.info(f"{config_manager.Language()}")
+        is_english = config_manager.IsEnglish()
+
         comma_value = self.punctuationMapping.get(message, None)
         digit_value = self.digitKeyMapping.get(message, None)
-        if config_manager.Language() == LanguageSetting.ENGLISH:
-            self.sendRawKeyEvent(message, comma_value, digit_value)
-        elif message == "ESC":  # 清空候選區
+        if message == "ESC":
             self.updateCandidates("")
         elif message == "BACKSPACE":  # 候選區有值，調整候選區，沒值則執行倒退
-            if self.inputBuffer:
-                self.updateCandidates(self.inputBuffer[:-1])
-            else:
+            if is_english or not self.inputBuffer:
                 self.keyboardController.tap(keyboard.Key.backspace)
+            elif self.inputBuffer:
+                self.updateCandidates(self.inputBuffer[:-1])
         elif message == "SPACE":  # 輸出候選區的第一個數值
-            if self.inputBuffer:
-                self.commitCandidate(self.inputBuffer, 0)
-            else:
+            if is_english or not self.inputBuffer:
                 self.keyboardController.tap(keyboard.Key.space)
+            else:
+                self.commitCandidate(self.inputBuffer, 0)
         elif digit_value:  # 有數字的話，就是選項
             num = int(digit_value)
-            if self.inputBuffer:
-                self.commitCandidate(self.inputBuffer, num)
-            else:
+            if is_english or not self.inputBuffer:
                 self.keyboardController.tap(digit_value)
                 self.updateCandidates("")
+            else:
+                self.commitCandidate(self.inputBuffer, num)
         elif comma_value:
-            self.updateCandidates(self.inputBuffer + comma_value)
+            if is_english:
+                self.keyboardController.tap(comma_value)
+            else:
+                self.updateCandidates(self.inputBuffer + comma_value)
         elif message.isalpha():
-            self.updateCandidates(self.inputBuffer + message)
+            if is_english:
+                self.keyboardController.tap(message)
+            else:
+                self.updateCandidates(self.inputBuffer + message)

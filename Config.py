@@ -70,6 +70,9 @@ class Config:
     def Position(self) -> str:
         return self._config.get("General", "Position")
 
+    def IsEnglish(self) -> bool:
+        return self._language == LanguageSetting.ENGLISH
+
     def NextLanguage(self) -> LanguageSetting:
         self._language = self._nextLanguage[self._language]
         return self.Language()

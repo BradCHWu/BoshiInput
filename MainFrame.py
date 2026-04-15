@@ -84,6 +84,7 @@ class MainFrame(QMainWindow):
             config_manager.NextLanguage()
             self._view.ShowLanguage()
             self._hide(self._hide_action.isChecked())
+            logging.info(f"{config_manager.Language()}")
         else:
             self._view.Send(key, keyList)
 
