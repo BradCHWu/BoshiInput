@@ -52,7 +52,8 @@ class MainFrame(QMainWindow):
 
         str_pos = config_manager.Position()
         p = toQPoint(str_pos)
-        sz = QSize(200, 50)
+        # sz = QSize(200, 50)
+        sz = QSize(50, 50)
         self.setGeometry(QRect(p, sz))
 
     def _create_tray_icon(self):

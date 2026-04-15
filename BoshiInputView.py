@@ -8,11 +8,9 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
-
 from LanguageWidget import LanguageWidget
-from ShapeWidget import ShapeWidget
-from InputWidget import InputWidget
-from CandidateWidget import CandidateWidget
+
+from GlobalOverlay import GlobalOverlay
 
 
 class ViewWidget(Enum):
@@ -28,9 +26,9 @@ class BoshiInputView(QWidget):
 
         self._widget = {
             ViewWidget.LANGUAGE: LanguageWidget(),
-            ViewWidget.SHAPE: ShapeWidget(),
-            ViewWidget.INPUT: InputWidget(),
-            ViewWidget.CANDIDATE: CandidateWidget(),
+            # ViewWidget.SHAPE: ShapeWidget(),
+            # ViewWidget.INPUT: InputWidget(),
+            # ViewWidget.CANDIDATE: CandidateWidget(),
         }
 
         style_sheet = """
@@ -57,9 +55,15 @@ class BoshiInputView(QWidget):
             logging.debug(f"Width = {width}")
             widget.setFixedWidth(width)
 
+        self.overlay = GlobalOverlay()
+
     def ShowLanguage(self):
         self._widget[ViewWidget.LANGUAGE].ShowLanguage()
 
     def Send(self, key, keyList):
-        self._widget[ViewWidget.INPUT].Send(key)
-        self._widget[ViewWidget.CANDIDATE].Send(keyList)
+        if key or keyList:
+            self.overlay.Send(key, keyList)
+        if ViewWidget.INPUT in self._widget:
+            self._widget[ViewWidget.INPUT].Send(key)
+        if ViewWidget.CANDIDATE in self._widget:
+            self._widget[ViewWidget.CANDIDATE].Send(keyList)
