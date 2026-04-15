@@ -87,7 +87,6 @@ class MainFrame(QMainWindow):
         else:
             self._view.Send(key, keyList)
 
-
     def closeEvent(self, event):
         config_manager.Save()
         logging.info(f"Application {Name()} closed")
@@ -109,4 +108,3 @@ class MainFrame(QMainWindow):
             logging.debug(f"Move {Name()} to {config_manager.Position()}")
 
         return super().mouseMoveEvent(event)
-

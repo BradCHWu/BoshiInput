@@ -123,7 +123,7 @@ fn handle_event(event: Event) -> Option<Event> {
                 }
 
                 // 2. 功能鍵：1-9, Backspace, Space (單純按下時攔截)
-                  Key::Num0
+                Key::Num0
                 | Key::Num1
                 | Key::Num2
                 | Key::Num3

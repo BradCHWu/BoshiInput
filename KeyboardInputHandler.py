@@ -76,7 +76,8 @@ class KeyboardInputHandler(QObject):
 
     def sendRawKeyEvent(self, message, comma, digit):
         if message == "ESC":
-            self.keyboardController.tap(keyboard.Key.esc)
+            # self.keyboardController.tap(keyboard.Key.esc)
+            pass
         elif message == "BACKSPACE":
             self.keyboardController.tap(keyboard.Key.backspace)
         elif message == "SPACE":
