@@ -5,8 +5,9 @@ from PySide6.QtCore import Qt, QPoint, QRect, QSize
 from PySide6.QtGui import QAction
 
 from setting import LoadPNG, png_Boshi, Name
-from Config import config_manager
+from Config import config_manager, LanguageSetting
 from CommonTool import fromQPoint, toQPoint
+from KeyboardInputHandler import KeyboardInputHandler
 from BoshiInputView import BoshiInputView
 
 
@@ -17,6 +18,8 @@ class MainFrame(QMainWindow):
         self.setWindowIcon(LoadPNG(png_Boshi))
 
         self._initial_logging()
+
+        self._keyboard_manager = KeyboardInputHandler(self._handle_keypress)
 
         self._view = BoshiInputView(self)
         self.setCentralWidget(self._view)
@@ -56,17 +59,34 @@ class MainFrame(QMainWindow):
         self._tray = QSystemTrayIcon(LoadPNG(png_Boshi), self)
 
         menu = QMenu()
-        hide_action = QAction("Hide", self)
-        hide_action.triggered.connect(self._hide)
+        self._hide_action = QAction("Hide", self)
+        self._hide_action.setCheckable(True)
+        self._hide_action.setChecked(True)
+        self._hide_action.toggled.connect(self._hide)
         exit_action = QAction("Close", self)
         exit_action.triggered.connect(QApplication.instance().quit)
-        menu.addAction(hide_action)
+        menu.addAction(self._hide_action)
         menu.addAction(exit_action)
         self._tray.setContextMenu(menu)
         self._tray.show()
 
-    def _hide(self, evnet):
-        self.hide() if self.isVisible() else self.show()
+    def _hide(self, checked):
+        if checked:
+            if config_manager.Language() == LanguageSetting.ENGLISH:
+                self.hide()
+            else:
+                self.show()
+        else:
+            self.show()
+
+    def _handle_keypress(self, key, keyList):
+        if key == "SWITCH":
+            config_manager.NextLanguage()
+            self._view.ShowLanguage()
+            self._hide(self._hide_action.isChecked())
+        else:
+            self._view.Send(key, keyList)
+
 
     def closeEvent(self, event):
         config_manager.Save()
@@ -89,3 +109,4 @@ class MainFrame(QMainWindow):
             logging.debug(f"Move {Name()} to {config_manager.Position()}")
 
         return super().mouseMoveEvent(event)
+

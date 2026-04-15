@@ -14,7 +14,7 @@ from LanguageWidget import LanguageWidget
 from ShapeWidget import ShapeWidget
 from InputWidget import InputWidget
 from CandidateWidget import CandidateWidget
-from KeyboardInputHandler import KeyboardInputHandler
+
 
 
 class ViewWidget(Enum):
@@ -28,7 +28,7 @@ class BoshiInputView(QWidget):
     def __init__(self, parent):
         super().__init__(parent)
 
-        self._keyboard_manager = KeyboardInputHandler(self._handle_keypress)
+
 
         self._widget = {
             ViewWidget.LANGUAGE: LanguageWidget(),
@@ -60,11 +60,9 @@ class BoshiInputView(QWidget):
             width = widget.WidthWithChar()
             logging.debug(f"Width = {width}")
             widget.setFixedWidth(width)
+    def ShowLanguage(self):
+        self._widget[ViewWidget.LANGUAGE].ShowLanguage()
 
-    def _handle_keypress(self, key, keyList):
-        if key == "SWITCH":
-            config_manager.NextLanguage()
-            self._widget[ViewWidget.LANGUAGE].ShowLanguage()
-        else:
-            self._widget[ViewWidget.INPUT].Send(key)
-            self._widget[ViewWidget.CANDIDATE].Send(keyList)
+    def Send(self, key, keyList):
+        self._widget[ViewWidget.INPUT].Send(key)
+        self._widget[ViewWidget.CANDIDATE].Send(keyList)
