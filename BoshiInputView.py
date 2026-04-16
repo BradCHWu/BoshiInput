@@ -9,6 +9,9 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 
 from LanguageWidget import LanguageWidget
+from ShapeWidget import ShapeWidget
+from InputWidget import InputWidget
+from CandidateWidget import CandidateWidget
 
 from GlobalOverlay import GlobalOverlay
 
@@ -24,12 +27,22 @@ class BoshiInputView(QWidget):
     def __init__(self, parent):
         super().__init__(parent)
 
+        self.showStyle = False
         self._widget = {
             ViewWidget.LANGUAGE: LanguageWidget(),
-            # ViewWidget.SHAPE: ShapeWidget(),
-            # ViewWidget.INPUT: InputWidget(),
-            # ViewWidget.CANDIDATE: CandidateWidget(),
+            ViewWidget.SHAPE: ShapeWidget(),
+            ViewWidget.INPUT: InputWidget(),
+            ViewWidget.CANDIDATE: CandidateWidget(),
         }
+        self._showWidget = {
+            ViewWidget.LANGUAGE: True,
+            ViewWidget.SHAPE: False,
+            ViewWidget.INPUT: False,
+            ViewWidget.CANDIDATE: False,
+        }
+        if self.showStyle:
+            for k in self._showWidget.keys():
+                self._showWidget[k] = True
 
         style_sheet = """
         QSplitter::handle {
@@ -40,7 +53,11 @@ class BoshiInputView(QWidget):
         self._splitter = QSplitter(Qt.Orientation.Horizontal)
         self._splitter.setHandleWidth(2)
         self._splitter.setStyleSheet(style_sheet)
-        for widget in self._widget.values():
+        for key in self._widget.keys():
+            show = self._showWidget[key]
+            if not show:
+                continue
+            widget = self._widget[key]
             self._splitter.addWidget(widget)
 
         layout = QHBoxLayout(self)
@@ -49,7 +66,11 @@ class BoshiInputView(QWidget):
         layout.addWidget(self._splitter)
 
         height = max(10, self.height() * 0.7)
-        for widget in self._widget.values():
+        for key in self._widget.keys():
+            show = self._showWidget[key]
+            if not show:
+                continue
+            widget = self._widget[key]
             widget.UpdateFont(height)
             width = widget.WidthWithChar()
             logging.debug(f"Width = {width}")
