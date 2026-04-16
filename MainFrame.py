@@ -1,17 +1,46 @@
 import logging
+import os
 
 from PySide6.QtWidgets import QMainWindow, QSystemTrayIcon, QMenu, QApplication
-from PySide6.QtCore import Qt, QPoint, QRect, QSize
+from PySide6.QtCore import Qt, QPoint, QRect, QSize, Signal
 from PySide6.QtGui import QAction
 
 from setting import LoadPNG, png_Boshi, Name
+
+from KeyboardGrab import KeyboardGrab
+from KeyboardMove import KeyboardMove
 from Config import config_manager, LanguageSetting
+from FileConvert import BinFileToJson
 from CommonTool import fromQPoint, toQPoint
-from KeyboardInputHandler import KeyboardInputHandler
+
 from BoshiInputView import BoshiInputView
 
 
 class MainFrame(QMainWindow):
+    HOOK_LIBRARY_PATH = "./keyboard.dll" if os.name == "nt" else "./keyboard.so"
+    DEFAULT_MAPPING_FILE = "liu.bin"
+    wordCandidateSignal = Signal(str, list)
+
+    punctuationMapping = {
+        "comma": ",",
+        "dot": ".",
+        "leftbracket": "[",
+        "rightbracket": "]",
+        "quote": "'",
+    }
+    digitKeyMapping = {
+        "NUM0": "0",
+        "NUM1": "1",
+        "NUM2": "2",
+        "NUM3": "3",
+        "NUM4": "4",
+        "NUM5": "5",
+        "NUM6": "6",
+        "NUM7": "7",
+        "NUM8": "8",
+        "NUM9": "9",
+    }
+
     def __init__(self):
         super().__init__()
         self.setWindowFlags(self._window_style())
@@ -19,7 +48,19 @@ class MainFrame(QMainWindow):
 
         self._initial_logging()
 
-        self._keyboard_manager = KeyboardInputHandler(self._handle_keypress)
+        dll_file = self.HOOK_LIBRARY_PATH
+        self.grab = KeyboardGrab.Hook(dll_file, self.handleKeyboardEvent)
+        self.wordCandidateSignal.connect(self._handle_keypress)
+
+        self.keyboard = KeyboardMove()
+
+        if os.path.exists(self.DEFAULT_MAPPING_FILE):
+            self.wordMapping = BinFileToJson("liu.bin")
+        else:
+            self.wordMapping = None
+            logging.error(f"{self.DEFAULT_MAPPING_FILE} not found")
+
+        self.inputBuffer = ""
 
         self._view = BoshiInputView(self)
         self.setCentralWidget(self._view)
@@ -27,6 +68,58 @@ class MainFrame(QMainWindow):
         self._restorePosition()
         self._create_tray_icon()
         logging.info(f"Application {Name()} initialize")
+
+    def updateCandidates(self, buf):
+        self.inputBuffer = buf
+        result = self.wordMapping.get(buf, [])
+        self.wordCandidateSignal.emit(buf, result)
+
+    def commitCandidate(self, buf, num):
+        result = self.wordMapping.get(buf, [])
+        if result and num < len(result):
+            self.keyboard.Type(result[num])
+        self.updateCandidates("")
+
+    def handleKeyboardEvent(self, msg_ptr):
+        message = msg_ptr.decode("utf-8")
+        if message == "Ctrl+Space":
+            self.updateCandidates("")
+            self.wordCandidateSignal.emit("SWITCH", [])
+            return
+
+        is_english = config_manager.IsEnglish()
+
+        comma_value = self.punctuationMapping.get(message, None)
+        digit_value = self.digitKeyMapping.get(message, None)
+        if len(message) == 1 and message.isalpha():
+            if is_english:
+                self.keyboard.Type(message)
+            else:
+                self.updateCandidates(self.inputBuffer + message)
+        elif message == "SPACE":  # 輸出候選區的第一個數值
+            if is_english or not self.inputBuffer:
+                self.keyboard.TapSpace()
+            else:
+                self.commitCandidate(self.inputBuffer, 0)
+        elif message == "BACKSPACE":  # 候選區有值，調整候選區，沒值則執行倒退
+            if is_english or not self.inputBuffer:
+                self.keyboard.TapBackspace()
+            elif self.inputBuffer:
+                self.updateCandidates(self.inputBuffer[:-1])
+        elif digit_value:  # 有數字的話，就是選項
+            if is_english or not self.inputBuffer:
+                self.keyboard.Type(digit_value)
+                self.updateCandidates("")
+            else:
+                num = int(digit_value)
+                self.commitCandidate(self.inputBuffer, num)
+        elif comma_value:
+            if is_english:
+                self.keyboard.Type(comma_value)
+            else:
+                self.updateCandidates(self.inputBuffer + comma_value)
+        elif message == "ESC":
+            self.updateCandidates("")
 
     def _window_style(self):
         window_style = Qt.WindowType.FramelessWindowHint
