@@ -85,32 +85,32 @@ class KeyboardInputHandler(QObject):
 
         comma_value = self.punctuationMapping.get(message, None)
         digit_value = self.digitKeyMapping.get(message, None)
-        if message == "ESC":
-            self.updateCandidates("")
-        elif message == "BACKSPACE":  # 候選區有值，調整候選區，沒值則執行倒退
-            if is_english or not self.inputBuffer:
-                self.keyboardController.tap(keyboard.Key.backspace)
-            elif self.inputBuffer:
-                self.updateCandidates(self.inputBuffer[:-1])
+        if len(message) == 1 and message.isalpha():
+            if is_english:
+                self.keyboardController.tap(message)
+            else:
+                self.updateCandidates(self.inputBuffer + message)
         elif message == "SPACE":  # 輸出候選區的第一個數值
             if is_english or not self.inputBuffer:
                 self.keyboardController.tap(keyboard.Key.space)
             else:
                 self.commitCandidate(self.inputBuffer, 0)
+        elif message == "BACKSPACE":  # 候選區有值，調整候選區，沒值則執行倒退
+            if is_english or not self.inputBuffer:
+                self.keyboardController.tap(keyboard.Key.backspace)
+            elif self.inputBuffer:
+                self.updateCandidates(self.inputBuffer[:-1])
         elif digit_value:  # 有數字的話，就是選項
-            num = int(digit_value)
             if is_english or not self.inputBuffer:
                 self.keyboardController.tap(digit_value)
                 self.updateCandidates("")
             else:
+                num = int(digit_value)
                 self.commitCandidate(self.inputBuffer, num)
         elif comma_value:
             if is_english:
                 self.keyboardController.tap(comma_value)
             else:
                 self.updateCandidates(self.inputBuffer + comma_value)
-        elif message.isalpha():
-            if is_english:
-                self.keyboardController.tap(message)
-            else:
-                self.updateCandidates(self.inputBuffer + message)
+        elif message == "ESC":
+            self.updateCandidates("")
