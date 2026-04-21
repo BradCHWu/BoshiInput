@@ -1,6 +1,6 @@
 [project]
 name = "BoshiInput"
-version = "0.1.0"
+version = "1.0.0"
 description = "個人製作的嘸蝦米輸入法"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -17,7 +17,6 @@ description = "Boshiamy Input"
 
 [dependency-groups]
 dev = [
-    "nuitka>=4.0.7",
+    "pyinstaller>=6.19.0",
     "ruff>=0.15.10",
-    "zstandard>=0.25.0",
 ]
