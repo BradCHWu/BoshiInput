@@ -1,16 +1,20 @@
 use rdev::{Event, EventType, Key, grab};
 use std::ffi::CString;
 use std::os::raw::c_char;
+use std::sync::atomic::AtomicU8;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 
 // 狀態追蹤
 static HOOK_RUNNING: AtomicBool = AtomicBool::new(false);
 static INTERCEPT_ENABLED: AtomicBool = AtomicBool::new(true);
-static CTRL_PRESSED: AtomicBool = AtomicBool::new(false);
-static ALT_PRESSED: AtomicBool = AtomicBool::new(false);
-static SHIFT_PROCESSED: AtomicBool = AtomicBool::new(false);
-static WIN_PROCESSED: AtomicBool = AtomicBool::new(false);
+
+const C: u8 = 1 << 0;
+const A: u8 = 1 << 1;
+const S: u8 = 1 << 2;
+const W: u8 = 1 << 3;
+
+static KEY_PRESSED: AtomicU8 = AtomicU8::new(0);
 
 // Python 回調定義
 type PythonCallback = extern "C" fn(*const c_char);
@@ -70,33 +74,30 @@ fn handle_event(event: Event) -> Option<Event> {
             // 更新修飾鍵狀態
             match key {
                 Key::ControlLeft | Key::ControlRight => {
-                    CTRL_PRESSED.store(true, Ordering::SeqCst);
+                    KEY_PRESSED.fetch_or(C, Ordering::SeqCst);
                     return Some(event);
                 }
                 Key::Alt | Key::AltGr => {
-                    ALT_PRESSED.store(true, Ordering::SeqCst);
+                    KEY_PRESSED.fetch_or(A, Ordering::SeqCst);
                     return Some(event);
                 }
                 Key::ShiftLeft | Key::ShiftRight => {
-                    SHIFT_PROCESSED.store(true, Ordering::SeqCst);
+                    KEY_PRESSED.fetch_or(S, Ordering::SeqCst);
                     return Some(event);
                 }
                 Key::MetaLeft | Key::MetaRight => {
-                    WIN_PROCESSED.store(true, Ordering::SeqCst);
+                    KEY_PRESSED.fetch_or(W, Ordering::SeqCst);
                 }
                 _ => {}
             }
 
-            // 判斷組合鍵狀態
-            let ctrl_active = CTRL_PRESSED.load(Ordering::SeqCst);
-            let alt_active = ALT_PRESSED.load(Ordering::SeqCst);
-            let shift_active = SHIFT_PROCESSED.load(Ordering::SeqCst);
-            let win_active = WIN_PROCESSED.load(Ordering::SeqCst);
-
             // 總是檢測 Ctrl+Space 並通知 Python，但不攔截
-            if key == Key::Space && ctrl_active {
-                send_to_python("Ctrl+Space");
-                return Some(event);
+            if key == Key::Space {
+                let ctrl: bool = KEY_PRESSED.fetch_and(C, Ordering::SeqCst) != 0;
+                if ctrl {
+                    send_to_python("Ctrl+Space");
+                    return Some(event);
+                }
             }
 
             // 如果攔截被禁用，放行所有按鍵
@@ -148,8 +149,8 @@ fn handle_event(event: Event) -> Option<Event> {
                 | Key::Num8
                 | Key::Num9
                 | Key::Backspace
-                | Key::Space => {                    
-                    if !ctrl_active && !alt_active && !shift_active && !win_active {
+                | Key::Space => {
+                    if KEY_PRESSED.load(Ordering::SeqCst) == 0 {
                         let msg = format!("{:?}", key).to_uppercase();
                         send_to_python(&msg);
                         return None;
@@ -170,16 +171,16 @@ fn handle_event(event: Event) -> Option<Event> {
             // 釋放修飾鍵狀態
             match key {
                 Key::ControlLeft | Key::ControlRight => {
-                    CTRL_PRESSED.store(false, Ordering::SeqCst);
+                    KEY_PRESSED.fetch_and(!C, Ordering::SeqCst);
                 }
                 Key::Alt | Key::AltGr => {
-                    ALT_PRESSED.store(false, Ordering::SeqCst);
+                    KEY_PRESSED.fetch_and(!A, Ordering::SeqCst);
                 }
                 Key::ShiftLeft | Key::ShiftRight => {
-                    SHIFT_PROCESSED.store(false, Ordering::SeqCst);
+                    KEY_PRESSED.fetch_and(!S, Ordering::SeqCst);
                 }
                 Key::MetaLeft | Key::MetaRight => {
-                    WIN_PROCESSED.store(false, Ordering::SeqCst);
+                    KEY_PRESSED.fetch_and(!W, Ordering::SeqCst);
                 }
                 _ => {}
             }
