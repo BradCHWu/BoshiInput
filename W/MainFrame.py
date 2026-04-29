@@ -39,7 +39,11 @@ class MainFrame(wx.Frame):
     }
 
     def __init__(self):
-        super().__init__(None, title=Name(), style=wx.FRAME_NO_TASKBAR | wx.STAY_ON_TOP | wx.FRAME_TOOL_WINDOW)
+        super().__init__(
+            None,
+            title=Name(),
+            style=wx.FRAME_NO_TASKBAR | wx.STAY_ON_TOP | wx.FRAME_TOOL_WINDOW,
+        )
         self._initial_logging()
 
         self.SetIcon(LoadPNG(png_Boshi))

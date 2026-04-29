@@ -40,14 +40,14 @@ class BoshiInputView(wx.Panel):
 
         # Create a sizer for the widgets
         sizer = wx.BoxSizer(wx.HORIZONTAL)
-        
+
         for key in self._widget.keys():
             show = self._showWidget[key]
             if not show:
                 continue
             widget = self._widget[key]
             sizer.Add(widget, 0, wx.EXPAND)
-        
+
         self.SetSizer(sizer)
 
         height = max(10, self.GetSize().height * 0.7)

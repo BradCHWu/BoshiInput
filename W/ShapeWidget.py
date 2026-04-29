@@ -14,7 +14,12 @@ class ShapeWidget(wx.Panel):
         self.SetSizer(sizer)
 
     def UpdateFont(self, fontHeight):
-        font = wx.Font(int(fontHeight), wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+        font = wx.Font(
+            int(fontHeight),
+            wx.FONTFAMILY_DEFAULT,
+            wx.FONTSTYLE_NORMAL,
+            wx.FONTWEIGHT_NORMAL,
+        )
         self.label.SetFont(font)
 
     def WidthWithChar(self):

@@ -3,6 +3,7 @@ import wx
 from W.MainFrame import MainFrame
 from W.setting import Name
 
+
 class BoshiApp(wx.App):
     def OnInit(self):
         self.checker = wx.SingleInstanceChecker(Name())
@@ -13,7 +14,6 @@ class BoshiApp(wx.App):
         self.frame = MainFrame()
         self.frame.Show()
         return True
-
 
 
 if __name__ == "__main__":

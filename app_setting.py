@@ -71,7 +71,7 @@ def __icon_from_wx(png_path, icon_path, sizes):
         if not image.IsOk():
             print(f"錯誤：無法載入圖片 '{png_path}'。")
             return False
-        
+
         # wxPython doesn't directly support ICO saving, but we can use PIL as primary
         # For now, return False to fall back to other methods
         return False
