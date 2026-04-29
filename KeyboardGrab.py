@@ -26,3 +26,7 @@ class KeyboardGrab:
     @staticmethod
     def Unhook():
         KeyboardGrab.bind_library.stop_keyboard_hook()
+
+    @staticmethod
+    def SetIntercept(enabled):
+        KeyboardGrab.bind_library.set_intercept_enabled(enabled)

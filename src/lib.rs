@@ -6,6 +6,7 @@ use std::thread;
 
 // 狀態追蹤
 static HOOK_RUNNING: AtomicBool = AtomicBool::new(false);
+static INTERCEPT_ENABLED: AtomicBool = AtomicBool::new(true);
 static CTRL_PRESSED: AtomicBool = AtomicBool::new(false);
 static ALT_PRESSED: AtomicBool = AtomicBool::new(false);
 static SHIFT_PROCESSED: AtomicBool = AtomicBool::new(false);
@@ -46,9 +47,20 @@ pub extern "C" fn stop_keyboard_hook() {
     HOOK_RUNNING.store(false, Ordering::SeqCst);
 }
 
+// 設置攔截啟用狀態
+#[unsafe(no_mangle)]
+pub extern "C" fn set_intercept_enabled(enabled: bool) {
+    INTERCEPT_ENABLED.store(enabled, Ordering::SeqCst);
+}
+
 fn handle_event(event: Event) -> Option<Event> {
     // 如果 Python 要求停止，立刻放行所有按鍵
     if !HOOK_RUNNING.load(Ordering::SeqCst) {
+        return Some(event);
+    }
+
+    // 如果攔截被禁用，放行所有按鍵
+    if !INTERCEPT_ENABLED.load(Ordering::SeqCst) {
         return Some(event);
     }
 
