@@ -21,11 +21,11 @@ class MainFrame(QMainWindow):
     wordCandidateSignal = Signal(str, list)
 
     punctuationMapping = {
-        "comma": ",",
-        "dot": ".",
-        "leftbracket": "[",
-        "rightbracket": "]",
-        "quote": "'",
+        "COMMA": ",",
+        "DOT": ".",
+        "LEFTBRACKET": "[",
+        "RIGHTBRACKET": "]",
+        "QUOTE": "'",
     }
     digitKeyMapping = {
         "NUM0": "0",
@@ -39,6 +39,34 @@ class MainFrame(QMainWindow):
         "NUM8": "8",
         "NUM9": "9",
     }
+    alphaKeyMapping = {
+        "KEYA": "a",
+        "KEYB": "b",
+        "KEYC": "c",
+        "KEYD": "d",
+        "KEYE": "e",
+        "KEYF": "f",
+        "KEYG": "g",
+        "KEYH": "h",
+        "KEYI": "i",
+        "KEYJ": "j",
+        "KEYK": "k",
+        "KEYL": "l",
+        "KEYM": "m",
+        "KEYN": "n",
+        "KEYO": "o",
+        "KEYP": "p",
+        "KEYQ": "q",
+        "KEYR": "r",
+        "KEYS": "s",
+        "KEYT": "t",
+        "KEYU": "u",
+        "KEYV": "v",
+        "KEYW": "w",
+        "KEYX": "x",
+        "KEYY": "y",
+        "KEYZ": "z",
+    }
 
     def __init__(self):
         super().__init__()
@@ -49,7 +77,7 @@ class MainFrame(QMainWindow):
 
         cur_path = os.path.abspath(os.path.curdir)
         dll_file = os.path.join(cur_path, self.HOOK_LIBRARY_PATH)
-        self.grab = KeyboardGrab.Hook(dll_file, self.handleKeyboardEvent)
+        KeyboardGrab.Hook(dll_file, self.handleKeyboardEvent)
         self.wordCandidateSignal.connect(self._handle_keypress)
 
         self.keyboard = KeyboardMove()
@@ -85,40 +113,42 @@ class MainFrame(QMainWindow):
         message = msg_ptr.decode("utf-8")
         if message == "Ctrl+Space":
             self.updateCandidates("")
+            config_manager.NextLanguage()
+            if config_manager.IsEnglish():
+                KeyboardGrab.SetIntercept(False)
+            else:
+                KeyboardGrab.SetIntercept(True)
             self.wordCandidateSignal.emit("SWITCH", [])
             return
-
-        is_english = config_manager.IsEnglish()
+        
+        if config_manager.IsEnglish():
+            return
+        
 
         comma_value = self.punctuationMapping.get(message, None)
         digit_value = self.digitKeyMapping.get(message, None)
-        if len(message) == 1 and message.isalpha():
-            if is_english:
-                self.keyboard.Type(message)
+        alpha_value = self.alphaKeyMapping.get(message, None)
+
+        if alpha_value:
+            if alpha_value == "v" and self.inputBuffer:
+                self.commitCandidate(self.inputBuffer, 1)
             else:
-                self.updateCandidates(self.inputBuffer + message)
-        elif message == "SPACE":  # 輸出候選區的第一個數值
-            if is_english or not self.inputBuffer:
-                self.keyboard.TapSpace()
-            else:
-                self.commitCandidate(self.inputBuffer, 0)
+                self.updateCandidates(self.inputBuffer + alpha_value)
+        elif comma_value:
+            self.updateCandidates(self.inputBuffer + comma_value)            
+        elif message == "SPACE":
+            self.commitCandidate(self.inputBuffer, 0)
         elif message == "BACKSPACE":  # 候選區有值，調整候選區，沒值則執行倒退
-            if is_english or not self.inputBuffer:
-                self.keyboard.TapBackspace()
-            elif self.inputBuffer:
+            if self.inputBuffer:
                 self.updateCandidates(self.inputBuffer[:-1])
-        elif digit_value:  # 有數字的話，就是選項
-            if is_english or not self.inputBuffer:
-                self.keyboard.Type(digit_value)
-                self.updateCandidates("")
             else:
+                self.keyboard.TapBackspace()
+        elif digit_value:  # 有數字的話，就是選項
+            if self.inputBuffer:  # 只有在有候選區的時候才處理數字選項
                 num = int(digit_value)
                 self.commitCandidate(self.inputBuffer, num)
-        elif comma_value:
-            if is_english:
-                self.keyboard.Type(comma_value)
             else:
-                self.updateCandidates(self.inputBuffer + comma_value)
+                self.keyboard.Type(digit_value)
         elif message == "ESC":
             self.updateCandidates("")
 
@@ -129,17 +159,21 @@ class MainFrame(QMainWindow):
         return window_style
 
     def _initial_logging(self):
+        logging_level = config_manager.LoggingLevel()
+        logging_format = "[%(levelname)s] %(lineno)s %(message)s"
+
         logging_file = None
         if config_manager.LoggingFile():
             logging_file = f"{Name()}.log"
-        logging_level = config_manager.LoggingLevel()
-        logging_format = "[%(levelname)s] %(lineno)s %(message)s"
-        logging.basicConfig(
-            filename=logging_file,
-            filemode="a",
-            level=logging_level,
-            format=logging_format,
-        )
+
+            logging.basicConfig(
+                filename=logging_file,
+                filemode="a",
+                level=logging_level,
+                format=logging_format,
+            )
+        else:
+            logging.basicConfig(level=logging_level, format=logging_format)
 
     def _restorePosition(self):
         self._drag_position = QPoint()
@@ -176,7 +210,6 @@ class MainFrame(QMainWindow):
 
     def _handle_keypress(self, key, keyList):
         if key == "SWITCH":
-            config_manager.NextLanguage()
             self._view.ShowLanguage()
             self._hide(self._hide_action.isChecked())
             logging.info(f"{config_manager.Language()}")
