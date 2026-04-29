@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QCursor
 
-from GhostText import GhostText
+from QT.GhostText import GhostText
 
 
 class GlobalOverlay(QWidget):

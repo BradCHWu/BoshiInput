@@ -63,29 +63,18 @@ def __icon_from_pil(png_path, icon_path, sizes):
     return True
 
 
-def __icon_from_pyside6(png_path, icon_path, sizes):
+def __icon_from_wx(png_path, icon_path, sizes):
     try:
-        import sys
-        from PySide6.QtGui import QImage, QPixmap
-        from PySide6.QtWidgets import QApplication
-        from PySide6.QtCore import Qt
+        import wx
 
-        app = QApplication.instance()
-        if not app:
-            app = QApplication(sys.argv)
-
-        image = QImage(png_path)
-        if image.isNull():
+        image = wx.Image(png_path, wx.BITMAP_TYPE_PNG)
+        if not image.IsOk():
             print(f"錯誤：無法載入圖片 '{png_path}'。")
             return False
-        max_scale = max(size[0] for size in sizes)
-        scaled_pixmap = QPixmap.fromImage(image).scaled(
-            max_scale,
-            max_scale,
-            Qt.AspectRatioMode.KeepAspectRatio,
-            Qt.TransformationMode.SmoothTransformation,
-        )
-        return scaled_pixmap.save(icon_path, "ICO")
+        
+        # wxPython doesn't directly support ICO saving, but we can use PIL as primary
+        # For now, return False to fall back to other methods
+        return False
     except ImportError:
         return False
 
@@ -105,8 +94,8 @@ def PngToIco(png_path, ico_path, sizes=((16, 16), (32, 32), (48, 48))):
 
     if __icon_from_pil(png_path, ico_path, sizes):
         print(f"成功將 '{png_path}' 轉換為 '{ico_path}' by PIL")
-    elif __icon_from_pyside6(png_path, ico_path, sizes):
-        print(f"成功將 '{png_path}' 轉換為 '{ico_path}' by PySide6")
+    elif __icon_from_wx(png_path, ico_path, sizes):
+        print(f"成功將 '{png_path}' 轉換為 '{ico_path}' by wxPython")
     else:
         print(f"錯誤：無法將 '{png_path}' 轉換為 '{ico_path}'")
 
