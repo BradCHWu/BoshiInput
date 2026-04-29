@@ -150,7 +150,7 @@ fn handle_event(event: Event) -> Option<Event> {
                 | Key::Backspace
                 | Key::Space => {                    
                     if !ctrl_active && !alt_active && !shift_active && !win_active {
-                        let msg = format!("{:?}", key).to_lowercase();
+                        let msg = format!("{:?}", key).to_uppercase();
                         send_to_python(&msg);
                         return None;
                     }
