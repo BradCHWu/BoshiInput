@@ -64,128 +64,118 @@ pub extern "C" fn get_intercept_enabled() -> bool {
 }
 
 fn handle_event(event: Event) -> Option<Event> {
-    // 如果 Python 要求停止，立刻放行所有按鍵
     if !HOOK_RUNNING.load(Ordering::SeqCst) {
         return Some(event);
     }
 
     match event.event_type {
         EventType::KeyPress(key) => {
-            // 更新修飾鍵狀態
-            match key {
-                Key::ControlLeft | Key::ControlRight => {
-                    KEY_PRESSED.fetch_or(C, Ordering::SeqCst);
-                    return Some(event);
-                }
-                Key::Alt | Key::AltGr => {
-                    KEY_PRESSED.fetch_or(A, Ordering::SeqCst);
-                    return Some(event);
-                }
-                Key::ShiftLeft | Key::ShiftRight => {
-                    KEY_PRESSED.fetch_or(S, Ordering::SeqCst);
-                    return Some(event);
-                }
-                Key::MetaLeft | Key::MetaRight => {
-                    KEY_PRESSED.fetch_or(W, Ordering::SeqCst);
-                }
-                _ => {}
+            // 1. 更新修飾鍵狀態並獲取當前快照
+            let mods = update_modifier_state(key, true);
+
+            // 2. 處理特殊放行鍵 (Ctrl+Space, ESC)
+            if let Some(event_to_return) = handle_special_cases(key, mods, &event) {
+                return Some(event_to_return);
             }
 
-            // 總是檢測 Ctrl+Space 並通知 Python，但不攔截
-            if key == Key::Space {
-                let ctrl: bool = KEY_PRESSED.fetch_and(C, Ordering::SeqCst) != 0;
-                if ctrl {
-                    send_to_python("Ctrl+Space");
-                    return Some(event);
+            // 3. 處理攔截邏輯
+            if INTERCEPT_ENABLED.load(Ordering::SeqCst) && mods == 0 {
+                if is_in_intercept_list(key) {
+                    let msg = format!("{:?}", key).to_uppercase();
+                    send_to_python(&msg);
+                    return None; // 正式攔截
                 }
             }
 
-            // 如果攔截被禁用，放行所有按鍵
-            if !INTERCEPT_ENABLED.load(Ordering::SeqCst) {
-                return Some(event);
-            }
-
-            match key {
-                // 指定攔截的字母、數字、符號與功能鍵 (單純按下時攔截)
-                Key::KeyA
-                | Key::KeyB
-                | Key::KeyC
-                | Key::KeyD
-                | Key::KeyE
-                | Key::KeyF
-                | Key::KeyG
-                | Key::KeyH
-                | Key::KeyI
-                | Key::KeyJ
-                | Key::KeyK
-                | Key::KeyL
-                | Key::KeyM
-                | Key::KeyN
-                | Key::KeyO
-                | Key::KeyP
-                | Key::KeyQ
-                | Key::KeyR
-                | Key::KeyS
-                | Key::KeyT
-                | Key::KeyU
-                | Key::KeyV
-                | Key::KeyW
-                | Key::KeyX
-                | Key::KeyY
-                | Key::KeyZ
-                | Key::Comma
-                | Key::Dot
-                | Key::Quote
-                | Key::LeftBracket
-                | Key::RightBracket
-                | Key::Num0
-                | Key::Num1
-                | Key::Num2
-                | Key::Num3
-                | Key::Num4
-                | Key::Num5
-                | Key::Num6
-                | Key::Num7
-                | Key::Num8
-                | Key::Num9
-                | Key::Backspace
-                | Key::Space => {
-                    if KEY_PRESSED.load(Ordering::SeqCst) == 0 {
-                        let msg = format!("{:?}", key).to_uppercase();
-                        send_to_python(&msg);
-                        return None;
-                    }
-                    Some(event)
-                }
-
-                // 2. 特殊鍵 (放行但告知 Python)
-                Key::Escape => {
-                    send_to_python("ESC");
-                    Some(event)
-                }
-
-                _ => Some(event),
-            }
+            Some(event)
         }
         EventType::KeyRelease(key) => {
-            // 釋放修飾鍵狀態
-            match key {
-                Key::ControlLeft | Key::ControlRight => {
-                    KEY_PRESSED.fetch_and(!C, Ordering::SeqCst);
-                }
-                Key::Alt | Key::AltGr => {
-                    KEY_PRESSED.fetch_and(!A, Ordering::SeqCst);
-                }
-                Key::ShiftLeft | Key::ShiftRight => {
-                    KEY_PRESSED.fetch_and(!S, Ordering::SeqCst);
-                }
-                Key::MetaLeft | Key::MetaRight => {
-                    KEY_PRESSED.fetch_and(!W, Ordering::SeqCst);
-                }
-                _ => {}
-            }
+            update_modifier_state(key, false);
             Some(event)
         }
         _ => Some(event),
+    }
+}
+
+fn update_modifier_state(key: Key, is_press: bool) -> u8 {
+    let mask = match key {
+        Key::ControlLeft        | Key::ControlRight => C,
+        Key::Alt        | Key::AltGr => A,
+        Key::ShiftLeft        | Key::ShiftRight => S,
+        Key::MetaLeft | Key::MetaRight => W,
+        _ => 0,
+    };
+
+    if mask != 0 {
+        if is_press {
+            KEY_PRESSED.fetch_or(mask, Ordering::SeqCst);
+        } else {
+            KEY_PRESSED.fetch_and(!mask, Ordering::SeqCst);
+        }
+    }
+
+    KEY_PRESSED.load(Ordering::SeqCst)
+}
+
+fn handle_special_cases(key: Key, mods: u8, event: &Event) -> Option<Event> {
+    // Ctrl + Space
+    if key == Key::Space && (mods & C) != 0 {
+        send_to_python("Ctrl+Space");
+        return Some(event.clone());
+    }
+    // ESC
+    if key == Key::Escape {
+        send_to_python("ESC");
+        return Some(event.clone());
+    }
+    None
+}
+
+fn is_in_intercept_list(key: Key) -> bool {
+    match key {
+        Key::KeyA
+        | Key::KeyB
+        | Key::KeyC
+        | Key::KeyD
+        | Key::KeyE
+        | Key::KeyF
+        | Key::KeyG
+        | Key::KeyH
+        | Key::KeyI
+        | Key::KeyJ
+        | Key::KeyK
+        | Key::KeyL
+        | Key::KeyM
+        | Key::KeyN
+        | Key::KeyO
+        | Key::KeyP
+        | Key::KeyQ
+        | Key::KeyR
+        | Key::KeyS
+        | Key::KeyT
+        | Key::KeyU
+        | Key::KeyV
+        | Key::KeyW
+        | Key::KeyX
+        | Key::KeyY
+        | Key::KeyZ
+        | Key::Comma
+        | Key::Dot
+        | Key::Quote
+        | Key::LeftBracket
+        | Key::RightBracket
+        | Key::Num0
+        | Key::Num1
+        | Key::Num2
+        | Key::Num3
+        | Key::Num4
+        | Key::Num5
+        | Key::Num6
+        | Key::Num7
+        | Key::Num8
+        | Key::Num9
+        | Key::Backspace
+        | Key::Space => true,
+        _ => false,
     }
 }
