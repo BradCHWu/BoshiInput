@@ -59,11 +59,6 @@ fn handle_event(event: Event) -> Option<Event> {
         return Some(event);
     }
 
-    // 如果攔截被禁用，放行所有按鍵
-    if !INTERCEPT_ENABLED.load(Ordering::SeqCst) {
-        return Some(event);
-    }
-
     match event.event_type {
         EventType::KeyPress(key) => {
             // 更新修飾鍵狀態
@@ -92,10 +87,15 @@ fn handle_event(event: Event) -> Option<Event> {
             let shift_active = SHIFT_PROCESSED.load(Ordering::SeqCst);
             let win_active = WIN_PROCESSED.load(Ordering::SeqCst);
 
-            // 特殊指定組合鍵：Ctrl + Space (即使有修飾鍵也要攔截並告知)
+            // 總是檢測 Ctrl+Space 並通知 Python，但不攔截
             if key == Key::Space && ctrl_active {
                 send_to_python("Ctrl+Space");
-                return None;
+                return Some(event);
+            }
+
+            // 如果攔截被禁用，放行所有按鍵
+            if !INTERCEPT_ENABLED.load(Ordering::SeqCst) {
+                return Some(event);
             }
 
             match key {
