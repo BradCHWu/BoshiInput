@@ -81,13 +81,13 @@ fn handle_event(event: Event) -> Option<Event> {
             let win_active = WIN_PROCESSED.load(Ordering::SeqCst);
 
             // 特殊指定組合鍵：Ctrl + Space (即使有修飾鍵也要攔截並告知)
-            if key == Key::Space && CTRL_PRESSED.load(Ordering::SeqCst) {
+            if key == Key::Space && ctrl_active {
                 send_to_python("Ctrl+Space");
                 return None;
             }
 
             match key {
-                // 1. 指定攔截的字母與符號 (單純按下時攔截)
+                // 指定攔截的字母、數字、符號與功能鍵 (單純按下時攔截)
                 Key::KeyA
                 | Key::KeyB
                 | Key::KeyC
@@ -118,17 +118,8 @@ fn handle_event(event: Event) -> Option<Event> {
                 | Key::Dot
                 | Key::Quote
                 | Key::LeftBracket
-                | Key::RightBracket => {
-                    if !ctrl_active && !alt_active && !shift_active && !win_active {
-                        let msg = format!("{:?}", key).replace("Key", "").to_lowercase();
-                        send_to_python(&msg);
-                        return None;
-                    }
-                    Some(event)
-                }
-
-                // 2. 功能鍵：1-9, Backspace, Space (單純按下時攔截)
-                Key::Num0
+                | Key::RightBracket
+                | Key::Num0
                 | Key::Num1
                 | Key::Num2
                 | Key::Num3
@@ -139,16 +130,16 @@ fn handle_event(event: Event) -> Option<Event> {
                 | Key::Num8
                 | Key::Num9
                 | Key::Backspace
-                | Key::Space => {
+                | Key::Space => {                    
                     if !ctrl_active && !alt_active && !shift_active && !win_active {
-                        let msg = format!("{:?}", key).to_uppercase();
+                        let msg = format!("{:?}", key).to_lowercase();
                         send_to_python(&msg);
                         return None;
                     }
                     Some(event)
                 }
 
-                // 3. 特殊鍵 (放行但告知 Python)
+                // 2. 特殊鍵 (放行但告知 Python)
                 Key::Escape => {
                     send_to_python("ESC");
                     Some(event)
