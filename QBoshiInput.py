@@ -1,11 +1,13 @@
 import sys
 
+from PySide6.QtWidgets import QMessageBox
 from QT.BoshiInputApp import BoshiInputApp
 
 
 if __name__ == "__main__":
-    app = BoshiInputApp(sys.argv)
-    if app.status is None:
+    try:
+        app = BoshiInputApp(sys.argv)
         sys.exit(app.exec())
-    else:
+    except Exception as e:
+        QMessageBox.warning(None, "提示", str(e))
         sys.exit(0)
