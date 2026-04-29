@@ -74,8 +74,8 @@ fn handle_event(event: Event) -> Option<Event> {
             let mods = update_modifier_state(key, true);
 
             // 2. 處理特殊放行鍵 (Ctrl+Space, ESC)
-            if let Some(event_to_return) = handle_special_cases(key, mods, &event) {
-                return Some(event_to_return);
+            if is_special_key_and_notified(key, mods) {
+                return Some(event);
             }
 
             // 3. 處理攔截邏輯
@@ -99,9 +99,9 @@ fn handle_event(event: Event) -> Option<Event> {
 
 fn update_modifier_state(key: Key, is_press: bool) -> u8 {
     let mask = match key {
-        Key::ControlLeft        | Key::ControlRight => C,
-        Key::Alt        | Key::AltGr => A,
-        Key::ShiftLeft        | Key::ShiftRight => S,
+        Key::ControlLeft | Key::ControlRight => C,
+        Key::Alt | Key::AltGr => A,
+        Key::ShiftLeft | Key::ShiftRight => S,
         Key::MetaLeft | Key::MetaRight => W,
         _ => 0,
     };
@@ -117,18 +117,18 @@ fn update_modifier_state(key: Key, is_press: bool) -> u8 {
     KEY_PRESSED.load(Ordering::SeqCst)
 }
 
-fn handle_special_cases(key: Key, mods: u8, event: &Event) -> Option<Event> {
+fn is_special_key_and_notified(key: Key, mods: u8) -> bool {
     // Ctrl + Space
     if key == Key::Space && (mods & C) != 0 {
         send_to_python("Ctrl+Space");
-        return Some(event.clone());
+        return true;
     }
     // ESC
     if key == Key::Escape {
         send_to_python("ESC");
-        return Some(event.clone());
+        return true;
     }
-    None
+    false
 }
 
 fn is_in_intercept_list(key: Key) -> bool {
