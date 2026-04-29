@@ -115,9 +115,9 @@ class MainFrame(QMainWindow):
             self.updateCandidates("")
             config_manager.NextLanguage()
             if config_manager.IsEnglish():
-                KeyboardGrab.SetIntercept(False)
+                KeyboardGrab.SetIntercept(0)
             else:
-                KeyboardGrab.SetIntercept(True)
+                KeyboardGrab.SetIntercept(1)
             self.wordCandidateSignal.emit("SWITCH", [])
             return
         
