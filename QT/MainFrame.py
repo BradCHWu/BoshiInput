@@ -5,19 +5,18 @@ from PySide6.QtWidgets import QMainWindow, QSystemTrayIcon, QMenu, QApplication
 from PySide6.QtCore import Qt, QPoint, QRect, QSize, Signal
 from PySide6.QtGui import QAction
 
-from setting import LoadPNG, png_Boshi, Name
+from QT.setting import LoadPNG, png_Boshi, Name
+from QT.CommonTool import fromQPoint, toQPoint
+from QT.BoshiInputView import BoshiInputView
 
-from KeyboardGrab import KeyboardGrab
-from KeyboardMove import KeyboardMove
 from Config import config_manager, LanguageSetting
 from FileConvert import BinFileToJson
-from CommonTool import fromQPoint, toQPoint
-
-from BoshiInputView import BoshiInputView
+from KeyboardGrab import KeyboardGrab
+from KeyboardMove import KeyboardMove
 
 
 class MainFrame(QMainWindow):
-    HOOK_LIBRARY_PATH = "./keyboard.dll" if os.name == "nt" else "./keyboard.so"
+    HOOK_LIBRARY_PATH = "keyboard.dll" if os.name == "nt" else "keyboard.so"
     DEFAULT_MAPPING_FILE = "liu.bin"
     wordCandidateSignal = Signal(str, list)
 
@@ -43,22 +42,24 @@ class MainFrame(QMainWindow):
 
     def __init__(self):
         super().__init__()
+        self._initial_logging()
+
         self.setWindowFlags(self._window_style())
         self.setWindowIcon(LoadPNG(png_Boshi))
 
-        self._initial_logging()
-
-        dll_file = self.HOOK_LIBRARY_PATH
+        cur_path = os.path.abspath(os.path.curdir)
+        dll_file = os.path.join(cur_path, self.HOOK_LIBRARY_PATH)
         self.grab = KeyboardGrab.Hook(dll_file, self.handleKeyboardEvent)
         self.wordCandidateSignal.connect(self._handle_keypress)
 
         self.keyboard = KeyboardMove()
 
-        if os.path.exists(self.DEFAULT_MAPPING_FILE):
-            self.wordMapping = BinFileToJson("liu.bin")
+        bin_file = os.path.join(cur_path, self.DEFAULT_MAPPING_FILE)
+        if os.path.exists(bin_file):
+            self.wordMapping = BinFileToJson(bin_file)
         else:
             self.wordMapping = None
-            logging.error(f"{self.DEFAULT_MAPPING_FILE} not found")
+            logging.error(f"{bin_file} not found")
 
         self.inputBuffer = ""
 

@@ -4,6 +4,7 @@ import sys
 import time
 import setting
 
+
 def fill_version(name, version) -> str:
     ver = version.split(".")
     if len(ver) < 4:
@@ -83,14 +84,7 @@ if __name__ == "__main__":
     with open(info_file, "w", encoding="utf-8") as ofile:
         ofile.write(results)
 
-    disp = [
-        "pyinstaller",
-        "-w",
-        "-F",
-        setting.Name() + ".py",
-        "-n",
-        setting.Name()
-    ]
+    disp = ["pyinstaller", "-w", "-F", setting.Name() + ".py", "-n", setting.Name()]
     if hasattr(setting, "Icon"):
         disp.append("-i")
         disp.append(setting.Icon())

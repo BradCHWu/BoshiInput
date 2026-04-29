@@ -8,12 +8,11 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
-from LanguageWidget import LanguageWidget
-from ShapeWidget import ShapeWidget
-from InputWidget import InputWidget
-from CandidateWidget import CandidateWidget
-
-from GlobalOverlay import GlobalOverlay
+from QT.LanguageWidget import LanguageWidget
+from QT.ShapeWidget import ShapeWidget
+from QT.InputWidget import InputWidget
+from QT.CandidateWidget import CandidateWidget
+from QT.GlobalOverlay import GlobalOverlay
 
 
 class ViewWidget(Enum):

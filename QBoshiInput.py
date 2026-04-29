@@ -3,8 +3,8 @@ import sys
 from PySide6.QtWidgets import QApplication, QMessageBox
 from PySide6.QtCore import QSharedMemory
 
-from MainFrame import MainFrame
-from setting import Name
+from QT.MainFrame import MainFrame
+from QT.setting import Name
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
