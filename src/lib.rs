@@ -53,6 +53,12 @@ pub extern "C" fn set_intercept_enabled(enabled: bool) {
     INTERCEPT_ENABLED.store(enabled, Ordering::SeqCst);
 }
 
+// 獲取攔截啟用狀態
+#[unsafe(no_mangle)]
+pub extern "C" fn get_intercept_enabled() -> bool {
+    INTERCEPT_ENABLED.load(Ordering::SeqCst)
+}
+
 fn handle_event(event: Event) -> Option<Event> {
     // 如果 Python 要求停止，立刻放行所有按鍵
     if !HOOK_RUNNING.load(Ordering::SeqCst) {

@@ -15,14 +15,14 @@ class BoshiInputApp(QApplication):
                 raise Exception("程式正在執行中")
 
             if not self.checker.create(1):
-                raise Exception("無法建立共享記憶體，可能是程式正在執行中或系統資源不足")
+                raise Exception("無法建立共享記憶體")
         except Exception as e:
             QMessageBox.warning(None, "提示", str(e))
             self.status = False
 
         if not self.status:
             return
-        
+
         self.frame = MainFrame()
         self.frame.show()
         self.setQuitOnLastWindowClosed(False)
