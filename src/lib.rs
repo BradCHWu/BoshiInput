@@ -7,7 +7,12 @@ use std::thread;
 
 // 狀態追蹤
 static HOOK_RUNNING: AtomicBool = AtomicBool::new(false);
-static INTERCEPT_ENABLED: AtomicBool = AtomicBool::new(true);
+
+// 攔截狀態
+// 0: 不攔截
+// 1: 攔截字母、數字、標點符號
+// 2: 攔截字母、標點符號
+static INTERCEPT_STATUS: AtomicU8 = AtomicU8::new(0);
 
 const C: u8 = 1 << 0;
 const A: u8 = 1 << 1;
@@ -53,18 +58,23 @@ pub extern "C" fn stop_keyboard_hook() {
 
 // 設置攔截啟用狀態
 #[unsafe(no_mangle)]
-pub extern "C" fn set_intercept_enabled(enabled: bool) {
-    INTERCEPT_ENABLED.store(enabled, Ordering::SeqCst);
+pub extern "C" fn set_intercept_status(status: u8) {
+    INTERCEPT_STATUS.store(status, Ordering::SeqCst);
 }
 
 // 獲取攔截啟用狀態
 #[unsafe(no_mangle)]
-pub extern "C" fn get_intercept_enabled() -> bool {
-    INTERCEPT_ENABLED.load(Ordering::SeqCst)
+pub extern "C" fn get_intercept_status() -> u8 {
+    INTERCEPT_STATUS.load(Ordering::SeqCst)
 }
 
 fn handle_event(event: Event) -> Option<Event> {
     if !HOOK_RUNNING.load(Ordering::SeqCst) {
+        return Some(event);
+    }
+
+    let status = INTERCEPT_STATUS.load(Ordering::SeqCst);
+    if status == 0 {
         return Some(event);
     }
 
@@ -79,8 +89,8 @@ fn handle_event(event: Event) -> Option<Event> {
             }
 
             // 3. 處理攔截邏輯
-            if INTERCEPT_ENABLED.load(Ordering::SeqCst) && mods == 0 {
-                if is_in_intercept_list(key) {
+            if mods == 0 {
+                if is_in_intercept_list(key, status) {
                     let msg = format!("{:?}", key).to_uppercase();
                     send_to_python(&msg);
                     return None; // 正式攔截
@@ -131,51 +141,88 @@ fn is_special_key_and_notified(key: Key, mods: u8) -> bool {
     false
 }
 
-fn is_in_intercept_list(key: Key) -> bool {
-    match key {
-        Key::KeyA
-        | Key::KeyB
-        | Key::KeyC
-        | Key::KeyD
-        | Key::KeyE
-        | Key::KeyF
-        | Key::KeyG
-        | Key::KeyH
-        | Key::KeyI
-        | Key::KeyJ
-        | Key::KeyK
-        | Key::KeyL
-        | Key::KeyM
-        | Key::KeyN
-        | Key::KeyO
-        | Key::KeyP
-        | Key::KeyQ
-        | Key::KeyR
-        | Key::KeyS
-        | Key::KeyT
-        | Key::KeyU
-        | Key::KeyV
-        | Key::KeyW
-        | Key::KeyX
-        | Key::KeyY
-        | Key::KeyZ
-        | Key::Comma
-        | Key::Dot
-        | Key::Quote
-        | Key::LeftBracket
-        | Key::RightBracket
-        | Key::Num0
-        | Key::Num1
-        | Key::Num2
-        | Key::Num3
-        | Key::Num4
-        | Key::Num5
-        | Key::Num6
-        | Key::Num7
-        | Key::Num8
-        | Key::Num9
-        | Key::Backspace
-        | Key::Space => true,
+fn is_in_intercept_list(key: Key, status: u8) -> bool {
+    match status {
+        1 => match key {
+            Key::KeyA
+            | Key::KeyB
+            | Key::KeyC
+            | Key::KeyD
+            | Key::KeyE
+            | Key::KeyF
+            | Key::KeyG
+            | Key::KeyH
+            | Key::KeyI
+            | Key::KeyJ
+            | Key::KeyK
+            | Key::KeyL
+            | Key::KeyM
+            | Key::KeyN
+            | Key::KeyO
+            | Key::KeyP
+            | Key::KeyQ
+            | Key::KeyR
+            | Key::KeyS
+            | Key::KeyT
+            | Key::KeyU
+            | Key::KeyV
+            | Key::KeyW
+            | Key::KeyX
+            | Key::KeyY
+            | Key::KeyZ
+            | Key::Comma
+            | Key::Dot
+            | Key::Quote
+            | Key::LeftBracket
+            | Key::RightBracket
+            | Key::Num0
+            | Key::Num1
+            | Key::Num2
+            | Key::Num3
+            | Key::Num4
+            | Key::Num5
+            | Key::Num6
+            | Key::Num7
+            | Key::Num8
+            | Key::Num9
+            | Key::Backspace
+            | Key::Space => true,
+            _ => false,
+        },
+        2 => match key {
+            Key::KeyA
+            | Key::KeyB
+            | Key::KeyC
+            | Key::KeyD
+            | Key::KeyE
+            | Key::KeyF
+            | Key::KeyG
+            | Key::KeyH
+            | Key::KeyI
+            | Key::KeyJ
+            | Key::KeyK
+            | Key::KeyL
+            | Key::KeyM
+            | Key::KeyN
+            | Key::KeyO
+            | Key::KeyP
+            | Key::KeyQ
+            | Key::KeyR
+            | Key::KeyS
+            | Key::KeyT
+            | Key::KeyU
+            | Key::KeyV
+            | Key::KeyW
+            | Key::KeyX
+            | Key::KeyY
+            | Key::KeyZ
+            | Key::Comma
+            | Key::Dot
+            | Key::Quote
+            | Key::LeftBracket
+            | Key::RightBracket => true,
+            _ => false,
+        },
         _ => false,
     }
 }
