@@ -69,14 +69,15 @@ def __icon_from_wx(png_path, icon_path, sizes):
     try:
         import wx
 
-        image = wx.Image(png_path, wx.BITMAP_TYPE_PNG)
+        app = wx.App()
+
+        image = wx.Image(png_path)
         if not image.IsOk():
             print(f"錯誤：無法載入圖片 '{png_path}'。")
             return False
-
-        # wxPython doesn't directly support ICO saving, but we can use PIL as primary
-        # For now, return False to fall back to other methods
-        return False
+        max_scale = max(size[0] for size in sizes)
+        scaled_image = image.Scale(max_scale, max_scale)
+        return scaled_image.SaveFile(icon_path, wx.BITMAP_TYPE_ICO)
     except ImportError:
         return False
 
