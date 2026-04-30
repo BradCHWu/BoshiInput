@@ -55,7 +55,9 @@ class Config:
             case "Error":
                 level = logging.ERROR
         logging_level = level
-        logging_format = "[%(levelname)s] %(lineno)s %(message)s"
+        logging_format = (
+            "[%(levelname)s] %(filename)s %(funcName)s %(lineno)s %(message)s"
+        )
         if self._config.getboolean("General", "LoggingFile"):
             now = datetime.datetime.now().strftime("%Y-%m-%d-%H%M-%S")
             logging_file = f"{self._file_name}_{now}.log"
