@@ -70,6 +70,8 @@ def __icon_from_wx(png_path, icon_path, sizes):
         import wx
 
         app = wx.App()
+        if app.IsActive():
+            print("wx.App created for icon conversion")
 
         image = wx.Image(png_path)
         if not image.IsOk():
