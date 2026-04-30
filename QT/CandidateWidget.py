@@ -21,7 +21,7 @@ class CandidateWidget(QWidget):
         m = QFontMetrics(self.label.font())
         return m.horizontalAdvance("1. XX 2. XX 3. XX 4. XX")
 
-    def Send(self, keyList):
+    def Update(self, keyList):
         if not keyList:
             s = ""
         else:

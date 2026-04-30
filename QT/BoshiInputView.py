@@ -1,4 +1,3 @@
-import logging
 from enum import Enum, auto
 
 from PySide6.QtWidgets import (
@@ -9,54 +8,40 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 
 from QT.LanguageWidget import LanguageWidget
-from QT.ShapeWidget import ShapeWidget
 from QT.InputWidget import InputWidget
 from QT.CandidateWidget import CandidateWidget
-from QT.GlobalOverlay import GlobalOverlay
 
 
 class ViewWidget(Enum):
     LANGUAGE = auto()
-    SHAPE = auto()
     INPUT = auto()
     CANDIDATE = auto()
 
 
 class BoshiInputView(QWidget):
+    HEIGHT = 20
+    WIDTH = 10
+
     def __init__(self, parent):
         super().__init__(parent)
 
-        self.showStyle = False
         self._widget = {
-            ViewWidget.LANGUAGE: LanguageWidget(),
-            ViewWidget.SHAPE: ShapeWidget(),
-            ViewWidget.INPUT: InputWidget(),
-            ViewWidget.CANDIDATE: CandidateWidget(),
+            ViewWidget.LANGUAGE: (LanguageWidget(), 1),
+            ViewWidget.INPUT: (InputWidget(), 5),
+            ViewWidget.CANDIDATE: (CandidateWidget(), 10),
         }
-        self._showWidget = {
-            ViewWidget.LANGUAGE: True,
-            ViewWidget.SHAPE: False,
-            ViewWidget.INPUT: False,
-            ViewWidget.CANDIDATE: False,
-        }
-        if self.showStyle:
-            for k in self._showWidget.keys():
-                self._showWidget[k] = True
-
         style_sheet = """
         QSplitter::handle {
                 background-color: #cccccc;
             }
         """
-
         self._splitter = QSplitter(Qt.Orientation.Horizontal)
         self._splitter.setHandleWidth(2)
         self._splitter.setStyleSheet(style_sheet)
-        for key in self._widget.keys():
-            show = self._showWidget[key]
-            if not show:
-                continue
-            widget = self._widget[key]
+        for values in self._widget.values():
+            widget, count = values
+            widget.setFixedHeight(self.HEIGHT)
+            widget.setFixedWidth(self.WIDTH * count)
             self._splitter.addWidget(widget)
 
         layout = QHBoxLayout(self)
@@ -64,26 +49,20 @@ class BoshiInputView(QWidget):
         layout.setSpacing(0)
         layout.addWidget(self._splitter)
 
-        height = max(10, self.height() * 0.7)
-        for key in self._widget.keys():
-            show = self._showWidget[key]
-            if not show:
-                continue
-            widget = self._widget[key]
-            widget.UpdateFont(height)
-            width = widget.WidthWithChar()
-            logging.debug(f"Width = {width}")
-            widget.setFixedWidth(width)
+    def Update(self, key, keyList):
+        if key == "SWITCH":
+            self.switch_language(keyList[0])
+            return
 
-        self.overlay = GlobalOverlay()
-
-    def ShowLanguage(self):
-        self._widget[ViewWidget.LANGUAGE].ShowLanguage()
-
-    def Send(self, key, keyList):
-        if key or keyList:
-            self.overlay.Send(key, keyList)
         if ViewWidget.INPUT in self._widget:
-            self._widget[ViewWidget.INPUT].Send(key)
+            self._widget[ViewWidget.INPUT][0].Update(key)
         if ViewWidget.CANDIDATE in self._widget:
-            self._widget[ViewWidget.CANDIDATE].Send(keyList)
+            self._widget[ViewWidget.CANDIDATE][0].Update(keyList)
+
+    def switch_language(self, language):
+        if ViewWidget.LANGUAGE in self._widget:
+            self._widget[ViewWidget.LANGUAGE][0].Update(language)
+        if ViewWidget.INPUT in self._widget:
+            self._widget[ViewWidget.INPUT][0].Update("")
+        if ViewWidget.CANDIDATE in self._widget:
+            self._widget[ViewWidget.CANDIDATE][0].Update([])

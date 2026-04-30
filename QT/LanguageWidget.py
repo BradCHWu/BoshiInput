@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QWidget, QLabel, QVBoxLayout
-from PySide6.QtGui import Qt, QFont, QFontMetrics
+from PySide6.QtGui import Qt
+
 
 from Config import config_manager
 
@@ -11,22 +12,17 @@ class LanguageWidget(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        self.label = QLabel(config_manager.ShowLanguage())
+        self.label = QLabel("中")
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         layout.addWidget(self.label)
 
-    def UpdateFont(self, fontHeight):
-        self.label.setFont(QFont("Arial", fontHeight))
-
-    def WidthWithChar(self):
-        m = QFontMetrics(self.label.font())
-        return m.horizontalAdvance("XX")
-
-    def ShowLanguage(self):
-        self.label.setText(config_manager.ShowLanguage())
-
     def mousePressEvent(self, event):
-        config_manager.NextLanguage()
-        self.ShowLanguage()
-        return super().mousePressEvent(event)
+        config_manager.SwitchLanguage()
+        event.accept()
+
+    def Update(self, language):
+        if language == "1":
+            self.label.setText("中")
+        else:
+            self.label.setText("英")

@@ -20,5 +20,5 @@ class InputWidget(QWidget):
         m = QFontMetrics(self.label.font())
         return m.horizontalAdvance("XXXX")
 
-    def Send(self, key):
+    def Update(self, key):
         self.label.setText(key.upper())

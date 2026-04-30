@@ -87,7 +87,8 @@ class BoshiCore:
         self.inputBuffer = ""
         self.candidateList = []
         if self.callback:
-            self.callback(self.inputBuffer, self.candidateList)
+            status = "1" if KeyboardGrab.GetIntercept() else "0"
+            self.callback("SWITCH", [status])
 
     def handle_esc(self):
         self.inputBuffer = ""
@@ -167,3 +168,6 @@ class BoshiCore:
         self.update_keyboard_grab()
         logging.debug(f"inputBuffer: {self.inputBuffer}")
         logging.debug(f"candidateList: {self.candidateList}")
+
+    def SwitchLanguage(self):
+        self.handle_ctrl_space()

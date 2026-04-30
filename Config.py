@@ -1,8 +1,10 @@
 import configparser
 import os
 import logging
+import datetime
 from enum import Enum, auto
-from tokenize import Name
+
+from BoshiCore import BoshiCore
 
 
 class LanguageSetting(Enum):
@@ -20,6 +22,7 @@ class Config:
             cls._instance = super().__new__(cls)
             cls._instance._load_config()
             cls._instance._initial_logging()
+            cls._boshiCore = None
             logging.info("Config instance created")
         return cls._instance
 
@@ -29,12 +32,6 @@ class Config:
 
         self._config = configparser.ConfigParser()
         self._config.optionxform = str
-
-        self._language = LanguageSetting.CHINESE
-        self._nextLanguage = {
-            LanguageSetting.CHINESE: LanguageSetting.ENGLISH,
-            LanguageSetting.ENGLISH: LanguageSetting.CHINESE,
-        }
         if os.path.exists(self._config_file):
             self.Load()
         else:
@@ -60,10 +57,11 @@ class Config:
         logging_level = level
         logging_format = "[%(levelname)s] %(lineno)s %(message)s"
         if self._config.getboolean("General", "LoggingFile"):
-            logging_file = f"{self._file_name}.log"
+            now = datetime.datetime.now().strftime("%Y-%m-%d-%H%M-%S")
+            logging_file = f"{self._file_name}_{now}.log"
             logging.basicConfig(
                 filename=logging_file,
-                filemode="a",
+                filemode="w",
                 level=logging_level,
                 format=logging_format,
             )
@@ -87,26 +85,19 @@ class Config:
         pos = map(int, pos_str.split(","))
         return pos
 
-    def IsEnglish(self) -> bool:
-        return self._language == LanguageSetting.ENGLISH
-
-    def NextLanguage(self) -> LanguageSetting:
-        self._language = self._nextLanguage[self._language]
-        return self.Language()
-
-    def Language(self) -> LanguageSetting:
-        return self._language
-
-    def ShowLanguage(self) -> str:
-        mapping = {LanguageSetting.CHINESE: "中", LanguageSetting.ENGLISH: "英"}
-        return mapping.get(self._language, "英")
-
     def Load(self) -> None:
         self._config.read(self._config_file, encoding="utf-8")
 
     def Save(self) -> None:
         with open(self._config_file, "w", encoding="utf-8") as ofile:
             self._config.write(ofile)
+
+    def InstallCallback(self, callback):
+        self._boshiCore = BoshiCore(callback)
+
+    def SwitchLanguage(self):
+        if self._boshiCore:
+            self._boshiCore.SwitchLanguage()
 
 
 # 建立一個全域變數供其他模組匯入
