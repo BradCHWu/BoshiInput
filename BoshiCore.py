@@ -71,7 +71,6 @@ class BoshiCore:
 
         self.inputBuffer = ""
         self.candidateList = []
-        self.elect = None
 
     def update_keyboard_grab(self):
         if self.inputBuffer == "":
@@ -86,31 +85,26 @@ class BoshiCore:
             KeyboardGrab.SetIntercept(2)
         self.inputBuffer = ""
         self.candidateList = []
-        self.elect = None
 
     def handle_esc(self):
         self.inputBuffer = ""
         self.candidateList = []
-        self.elect = None
         self.update_keyboard_grab()
 
     def handle_selection(self, selection):
         assert self.inputBuffer != ""
 
         if self.candidateList and selection < len(self.candidateList):
-            self.elect = self.candidateList[selection]
+            elect = self.candidateList[selection]
+            KeyboardGrab.Output(elect)
         self.inputBuffer = ""
         self.candidateList = []
-        if self.elect:
-            KeyboardGrab.Output(self.elect)
-            self.elect = None
 
     def handle_backspace(self):
         assert self.inputBuffer != ""
 
         self.inputBuffer = self.inputBuffer[:-1]
         self.candidateList = self.wordMapping.get(self.inputBuffer, [])
-        self.elect = None
         self.update_keyboard_grab()
 
     def handle_alpha(self, alpha):
@@ -160,4 +154,3 @@ class BoshiCore:
         self.update_keyboard_grab()
         logging.debug(f"inputBuffer: {self.inputBuffer}")
         logging.debug(f"candidateList: {self.candidateList}")
-        logging.debug(f"elect: {self.elect}")
