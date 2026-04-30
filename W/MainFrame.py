@@ -1,75 +1,113 @@
-import logging
-
-
 import wx
 import wx.adv
 
 from W.setting import LoadPNG, png_Boshi, Name
-# from W.BoshiInputView import BoshiInputView
 
-from Config import config_manager
+class IMETaskBarIcon(wx.adv.TaskBarIcon):
+    def __init__(self, frame):
+        super().__init__()
+        self.frame = frame
+        self.SetIcon(LoadPNG(png_Boshi), Name())
+        
+        # 綁定右鍵選單事件
+        self.Bind(wx.adv.EVT_TASKBAR_RIGHT_UP, self.OnRightClick)
 
+    def CreatePopupMenu(self):
+        """建立右鍵選單"""
+        menu = wx.Menu()
+        exit_item = menu.Append(wx.ID_EXIT, "關閉程式")
+        self.Bind(wx.EVT_MENU, self.OnExit, exit_item)
+        return menu
+
+    def OnRightClick(self, event):
+        self.PopupMenu(self.CreatePopupMenu())
+
+    def OnExit(self, event):
+        self.frame.Close()
+        wx.CallAfter(self.Destroy)
 
 class MainFrame(wx.Frame):
     def __init__(self):
-        super().__init__(None, title=Name(), style=wx.FRAME_NO_TASKBAR | wx.STAY_ON_TOP | wx.FRAME_TOOL_WINDOW)
-        config_manager.InstallCallback(self._input_callback)
-
+        style = (wx.STAY_ON_TOP | wx.FRAME_NO_TASKBAR | wx.NO_BORDER)
+        super().__init__(None, title="IME Window", style=style)
         self.SetIcon(LoadPNG(png_Boshi))
+        
+        self.SetBackgroundColour('white')
+        self.font = wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL)
+        self.tb_icon = IMETaskBarIcon(self)
+        # 計算寬度
+        dc = wx.ScreenDC()
+        dc.SetFont(self.font)
+        char_w, _ = dc.GetTextExtent("中")
+        self.SetSize((char_w * 10, 50))
+        
+        self.mouse_pos = wx.Point(0, 0)
 
-        # self._view = BoshiInputView(self)
-        # self.setCentralWidget(self._view)
+        # 主佈局
+        main_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.lang_view = self._build_sub_view("繁", "#4A90E2", width=char_w * 1.5)
+        self.mode_view = self._build_sub_view("注音", "#555555", width=char_w * 2)
+        self.cand_view = self._build_sub_view("你好、您好、擬好", "#333333", expand=True)
 
-        self._restorePosition()
-        self._create_tray_icon()
-        logging.info(f"Application {Name()} initialize")
-        self.Bind(wx.EVT_CLOSE, self.closeEvent)
-        self.Bind(wx.EVT_LEFT_DOWN, self.mousePressEvent)
-        self.Bind(wx.EVT_RIGHT_DOWN, self.mouseRightEvent)
-        self.Bind(wx.EVT_MOVING, self.mouseMoveEvent)
+        main_sizer.Add(self.lang_view, 0, wx.EXPAND)
+        main_sizer.Add(wx.StaticLine(self, style=wx.LI_VERTICAL), 0, wx.EXPAND)
+        main_sizer.Add(self.mode_view, 0, wx.EXPAND)
+        main_sizer.Add(wx.StaticLine(self, style=wx.LI_VERTICAL), 0, wx.EXPAND)
+        main_sizer.Add(self.cand_view, 1, wx.EXPAND)
 
-    def _input_callback(self, in_char, candidates):
-        logging.debug(f"Input: {in_char}, Candidates: {candidates}")
-        self._view.Update(in_char, candidates)
+        outer_border = wx.BoxSizer(wx.VERTICAL)
+        outer_border.Add(main_sizer, 1, wx.EXPAND | wx.ALL, 1) 
+        self.SetSizer(outer_border)
+        self.Layout()
 
-    def _restorePosition(self):
-        p = config_manager.GetPosition()
-        self.SetPosition(wx.Point(*p))
+        # --- 核心修正：遞迴綁定所有子元件的滑鼠事件 ---
+        self._bind_drag_events(self)
+        
+        self.Show()
 
-    def _create_tray_icon(self):
-        self._tray = wx.adv.TaskBarIcon()
-        self._tray.SetIcon(LoadPNG(png_Boshi), Name())
+    def _bind_drag_events(self, parent):
+        """讓所有子元件都能觸發視窗拖動"""
+        for child in parent.GetChildren():
+            child.Bind(wx.EVT_LEFT_DOWN, self.OnMouseDown)
+            child.Bind(wx.EVT_MOTION, self.OnMouseMove)
+            child.Bind(wx.EVT_LEFT_UP, self.OnMouseUp)
+            self._bind_drag_events(child) # 遞迴處理更深層的元件
+        
+        # 也要綁定視窗本體
+        parent.Bind(wx.EVT_LEFT_DOWN, self.OnMouseDown)
+        parent.Bind(wx.EVT_MOTION, self.OnMouseMove)
+        parent.Bind(wx.EVT_LEFT_UP, self.OnMouseUp)
 
-        self._tray.Bind(wx.adv.EVT_TASKBAR_RIGHT_DOWN, self.onTrayRightClick)
-        self._tray.Bind(wx.adv.EVT_TASKBAR_LEFT_DOWN, self.onTrayClick)
+    def _build_sub_view(self, text, color, width=-1, expand=False):
+        pnl = wx.Panel(self)
+        if width != -1:
+            pnl.SetMinSize((width, -1))
+        
+        inner_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        lbl = wx.StaticText(pnl, label=text, style=wx.ALIGN_CENTER)
+        lbl.SetForegroundColour(color)
+        lbl.SetFont(self.font)
+        
+        inner_sizer.Add(lbl, 1, wx.ALIGN_CENTER | wx.ALL, 5)
+        pnl.SetSizer(inner_sizer)
+        return pnl
 
-    def closeEvent(self, event):
-        config_manager.Save()
-        logging.info(f"Application {Name()} closed")
-        return super().closeEvent(event)
+    # --- 拖曳邏輯修正 ---
+    def OnMouseDown(self, event):
+        obj = event.GetEventObject()
+        obj.CaptureMouse()
+        # 關鍵：不論點擊哪個元件，都換算出相對於「螢幕」的座標來計算偏移
+        self.mouse_pos = event.GetEventObject().ClientToScreen(event.GetPosition()) - self.GetPosition()
 
-    def mousePressEvent(self, event):
-        self._drag_position = event.GetPosition()
-        event.Skip()
-
-    def mouseRightEvent(self, event):
-        self._tray.PopupMenu(self._tray.GetMenu())
-        event.Skip()
-
-    def mouseMoveEvent(self, event):
+    def OnMouseMove(self, event):
         if event.Dragging() and event.LeftIsDown():
-            gp = event.GetPosition()
-            self.Move(self.ClientToScreen(gp - self._drag_position))
-            pt = self.GetPosition()
-            config_manager.SetPosition((pt.x, pt.y))
-        return super().mouseMoveEvent(event)
+            # 取得目前的螢幕絕對座標
+            curr_pos = event.GetEventObject().ClientToScreen(event.GetPosition())
+            # 移動視窗本體
+            self.Move(curr_pos - self.mouse_pos)
 
-    def onTrayRightClick(self, event):
-        menu = wx.Menu()
-        exit_action = menu.Append(wx.ID_EXIT, "Close")
-        self.Bind(wx.EVT_MENU, self.onExit, exit_action)
-        self._tray.PopupMenu(menu)
-        menu.Destroy()
+    def OnMouseUp(self, event):
+        obj = event.GetEventObject()
+        if obj.HasCapture():
+            obj.ReleaseMouse()
 
-    def onTrayClick(self, event):
-        pass
