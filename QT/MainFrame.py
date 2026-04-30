@@ -1,5 +1,5 @@
 import logging
-import os
+
 
 from PySide6.QtWidgets import QMainWindow, QSystemTrayIcon, QMenu, QApplication
 from PySide6.QtCore import Qt, QPoint, QRect, QSize, Signal
@@ -10,63 +10,12 @@ from QT.CommonTool import fromQPoint, toQPoint
 from QT.BoshiInputView import BoshiInputView
 
 from Config import config_manager, LanguageSetting
-from FileConvert import BinFileToJson
-from KeyboardGrab import KeyboardGrab
 from KeyboardMove import KeyboardMove
+from BoshiCore import BoshiCore
 
 
 class MainFrame(QMainWindow):
-    HOOK_LIBRARY_PATH = "BoshiKeyboard.dll" if os.name == "nt" else "keyboard.so"
-    DEFAULT_MAPPING_FILE = "liu.bin"
     wordCandidateSignal = Signal(str, list)
-
-    punctuationMapping = {
-        "COMMA": ",",
-        "DOT": ".",
-        "LEFTBRACKET": "[",
-        "RIGHTBRACKET": "]",
-        "QUOTE": "'",
-    }
-    digitKeyMapping = {
-        "NUM0": "0",
-        "NUM1": "1",
-        "NUM2": "2",
-        "NUM3": "3",
-        "NUM4": "4",
-        "NUM5": "5",
-        "NUM6": "6",
-        "NUM7": "7",
-        "NUM8": "8",
-        "NUM9": "9",
-    }
-    alphaKeyMapping = {
-        "KEYA": "a",
-        "KEYB": "b",
-        "KEYC": "c",
-        "KEYD": "d",
-        "KEYE": "e",
-        "KEYF": "f",
-        "KEYG": "g",
-        "KEYH": "h",
-        "KEYI": "i",
-        "KEYJ": "j",
-        "KEYK": "k",
-        "KEYL": "l",
-        "KEYM": "m",
-        "KEYN": "n",
-        "KEYO": "o",
-        "KEYP": "p",
-        "KEYQ": "q",
-        "KEYR": "r",
-        "KEYS": "s",
-        "KEYT": "t",
-        "KEYU": "u",
-        "KEYV": "v",
-        "KEYW": "w",
-        "KEYX": "x",
-        "KEYY": "y",
-        "KEYZ": "z",
-    }
 
     def __init__(self):
         super().__init__()
@@ -75,21 +24,10 @@ class MainFrame(QMainWindow):
         self.setWindowFlags(self._window_style())
         self.setWindowIcon(LoadPNG(png_Boshi))
 
-        cur_path = os.path.abspath(os.path.curdir)
-        dll_file = os.path.join(cur_path, self.HOOK_LIBRARY_PATH)
-        KeyboardGrab.Hook(dll_file, self.handleKeyboardEvent)
         self.wordCandidateSignal.connect(self._handle_keypress)
 
         self.keyboard = KeyboardMove()
-
-        bin_file = os.path.join(cur_path, self.DEFAULT_MAPPING_FILE)
-        if os.path.exists(bin_file):
-            self.wordMapping = BinFileToJson(bin_file)
-        else:
-            self.wordMapping = None
-            logging.error(f"{bin_file} not found")
-
-        self.inputBuffer = ""
+        self.boshiCore = BoshiCore()
 
         self._view = BoshiInputView(self)
         self.setCentralWidget(self._view)
@@ -120,10 +58,9 @@ class MainFrame(QMainWindow):
                 KeyboardGrab.SetIntercept(1)
             self.wordCandidateSignal.emit("SWITCH", [])
             return
-        
+
         if config_manager.IsEnglish():
             return
-        
 
         comma_value = self.punctuationMapping.get(message, None)
         digit_value = self.digitKeyMapping.get(message, None)
@@ -135,7 +72,7 @@ class MainFrame(QMainWindow):
             else:
                 self.updateCandidates(self.inputBuffer + alpha_value)
         elif comma_value:
-            self.updateCandidates(self.inputBuffer + comma_value)            
+            self.updateCandidates(self.inputBuffer + comma_value)
         elif message == "SPACE":
             self.commitCandidate(self.inputBuffer, 0)
         elif message == "BACKSPACE":  # 候選區有值，調整候選區，沒值則執行倒退
