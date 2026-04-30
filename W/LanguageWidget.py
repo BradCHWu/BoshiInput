@@ -1,6 +1,6 @@
 import wx
 
-from Config import config_manager
+
 
 class LanguageWidget(wx.Panel):
     def __init__(self, parent):
@@ -10,11 +10,13 @@ class LanguageWidget(wx.Panel):
         self.label = wx.StaticText(self, label="中", style=wx.ALIGN_CENTER)
         color = "#4A90E2"
         self.SetForegroundColour(color)
-        sizer.Add(self.label, 1, wx.ALIGN_CENTER | wx.ALL, 5)
+        sizer.Add(self.label, 1, wx.ALIGN_CENTER | wx.ALL, 0)
         self.SetSizer(sizer)
+        # self.SetMinSize(wx.Size(40, 40))
+        # self.SetMaxSize(wx.Size(40, 40))
 
     def Update(self, language):
         if language == "1":
-            self.label.SetLabelText("中")
+            self.label.SetLabel("中")
         else:
-            self.label.SetLabelText("英")
+            self.label.SetLabel("英")

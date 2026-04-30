@@ -24,11 +24,11 @@ class BoshiInputView(wx.Panel):
         }
 
         sizer = wx.BoxSizer(wx.HORIZONTAL)
-        sizer.Add(self._widget[ViewWidget.LANGUAGE], 0, wx.EXPAND)
+        sizer.Add(self._widget[ViewWidget.LANGUAGE], 1, wx.EXPAND)
         sizer.Add(wx.StaticLine(self, style=wx.LI_VERTICAL), 0, wx.EXPAND)
-        sizer.Add(self._widget[ViewWidget.INPUT], 0, wx.EXPAND)
+        sizer.Add(self._widget[ViewWidget.INPUT], 3, wx.EXPAND)
         sizer.Add(wx.StaticLine(self, style=wx.LI_VERTICAL), 0, wx.EXPAND)
-        sizer.Add(self._widget[ViewWidget.CANDIDATE], 1, wx.EXPAND)
+        sizer.Add(self._widget[ViewWidget.CANDIDATE], 10, wx.EXPAND)
         self.SetSizer(sizer)
 
     def Update(self, key, keyList):

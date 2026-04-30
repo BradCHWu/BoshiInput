@@ -10,8 +10,8 @@ from Config import config_manager
 
 
 class MainFrame(wx.Frame):
-    WIDTH = 150
-    HEIGHT = 40
+    WIDTH = 200
+    HEIGHT = 20
 
     def __init__(self):
         style = wx.STAY_ON_TOP | wx.FRAME_NO_TASKBAR | wx.NO_BORDER
