@@ -1,6 +1,6 @@
+use enigo::{Enigo, Keyboard, Settings};
 use rdev::{Event, EventType, Key, grab};
 use std::ffi::{CStr, CString};
-use enigo::{Enigo, Keyboard, Settings};
 use std::os::raw::c_char;
 use std::sync::atomic::AtomicU8;
 use std::sync::atomic::{AtomicBool, Ordering};

@@ -13,7 +13,6 @@ from FileConvert import BinFileToJson
 from KeyboardGrab import KeyboardGrab
 
 
-
 class MainFrame(wx.Frame):
     HOOK_LIBRARY_PATH = "keyboard.dll" if os.name == "nt" else "keyboard.so"
     DEFAULT_MAPPING_FILE = "liu.bin"

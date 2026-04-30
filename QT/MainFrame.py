@@ -2,7 +2,7 @@ import logging
 
 
 from PySide6.QtWidgets import QMainWindow, QSystemTrayIcon, QMenu, QApplication
-from PySide6.QtCore import Qt, QPoint, QRect, QSize, Signal
+from PySide6.QtCore import Qt, QPoint, QRect, QSize
 from PySide6.QtGui import QAction
 
 from QT.setting import LoadPNG, png_Boshi, Name
@@ -21,8 +21,6 @@ class MainFrame(QMainWindow):
         self.setWindowFlags(self._window_style())
         self.setWindowIcon(LoadPNG(png_Boshi))
 
-
-
         self.boshiCore = BoshiCore()
 
         self._view = BoshiInputView(self)
@@ -31,7 +29,6 @@ class MainFrame(QMainWindow):
         self._restorePosition()
         self._create_tray_icon()
         logging.info(f"Application {Name()} initialize")
-
 
     def _window_style(self):
         window_style = Qt.WindowType.FramelessWindowHint
@@ -88,7 +85,6 @@ class MainFrame(QMainWindow):
                 self.show()
         else:
             self.show()
-
 
     def closeEvent(self, event):
         config_manager.Save()
