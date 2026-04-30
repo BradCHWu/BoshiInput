@@ -16,12 +16,13 @@ from BoshiCore import BoshiCore
 class MainFrame(QMainWindow):
     def __init__(self):
         super().__init__()
-        self._initial_logging()
+        BoshiCore(self._input_callback)
 
-        self.setWindowFlags(self._window_style())
+        window_style = Qt.WindowType.FramelessWindowHint
+        window_style |= Qt.WindowType.Tool
+        window_style |= Qt.WindowType.WindowStaysOnTopHint
+        self.setWindowFlags(window_style)
         self.setWindowIcon(LoadPNG(png_Boshi))
-
-        self.boshiCore = BoshiCore()
 
         self._view = BoshiInputView(self)
         self.setCentralWidget(self._view)
@@ -30,37 +31,15 @@ class MainFrame(QMainWindow):
         self._create_tray_icon()
         logging.info(f"Application {Name()} initialize")
 
-    def _window_style(self):
-        window_style = Qt.WindowType.FramelessWindowHint
-        window_style |= Qt.WindowType.Tool
-        window_style |= Qt.WindowType.WindowStaysOnTopHint
-        return window_style
-
-    def _initial_logging(self):
-        logging_level = config_manager.LoggingLevel()
-        logging_format = "[%(levelname)s] %(lineno)s %(message)s"
-
-        logging_file = None
-        if config_manager.LoggingFile():
-            logging_file = f"{Name()}.log"
-
-            logging.basicConfig(
-                filename=logging_file,
-                filemode="a",
-                level=logging_level,
-                format=logging_format,
-            )
-        else:
-            logging.basicConfig(level=logging_level, format=logging_format)
+    def _input_callback(self, in_char, candidates):
+        logging.debug(f"Input: {in_char}, Candidates: {candidates}")
+        # self._view.Update(in_char, candidates)
 
     def _restorePosition(self):
-        self._drag_position = QPoint()
-
-        str_pos = config_manager.Position()
-        p = toQPoint(str_pos)
-        # sz = QSize(200, 50)
+        p = config_manager.GetPosition()
+        pos = QPoint(*p)
         sz = QSize(50, 50)
-        self.setGeometry(QRect(p, sz))
+        self.setGeometry(QRect(pos, sz))
 
     def _create_tray_icon(self):
         self._tray = QSystemTrayIcon(LoadPNG(png_Boshi), self)
@@ -103,7 +82,7 @@ class MainFrame(QMainWindow):
         if event.buttons() == Qt.MouseButton.LeftButton:
             gp = event.globalPosition().toPoint()
             self.move(gp - self._drag_position)
-            config_manager.SetPosition(fromQPoint(self.geometry().topLeft()))
-            logging.debug(f"Move {Name()} to {config_manager.Position()}")
+            pt = self.geometry().topLeft()
+            config_manager.SetPosition((pt.x(), pt.y()))
 
         return super().mouseMoveEvent(event)

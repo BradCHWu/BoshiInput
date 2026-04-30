@@ -56,7 +56,7 @@ class BoshiCore:
         "KEYZ": "z",
     }
 
-    def __init__(self):
+    def __init__(self, callback):
         cur_path = os.path.abspath(os.path.curdir)
 
         dll_file = os.path.join(cur_path, self.HOOK_LIBRARY_PATH)
@@ -71,9 +71,10 @@ class BoshiCore:
 
         self.inputBuffer = ""
         self.candidateList = []
+        self.callback = callback
 
     def update_keyboard_grab(self):
-        if self.inputBuffer == "":
+        if not self.inputBuffer:
             KeyboardGrab.SetIntercept(2)
         else:
             KeyboardGrab.SetIntercept(1)
@@ -85,10 +86,14 @@ class BoshiCore:
             KeyboardGrab.SetIntercept(2)
         self.inputBuffer = ""
         self.candidateList = []
+        if self.callback:
+            self.callback(self.inputBuffer, self.candidateList)
 
     def handle_esc(self):
         self.inputBuffer = ""
         self.candidateList = []
+        if self.callback:
+            self.callback(self.inputBuffer, self.candidateList)
         self.update_keyboard_grab()
 
     def handle_selection(self, selection):
@@ -99,12 +104,16 @@ class BoshiCore:
             KeyboardGrab.Output(elect)
         self.inputBuffer = ""
         self.candidateList = []
+        if self.callback:
+            self.callback(self.inputBuffer, self.candidateList)
 
     def handle_backspace(self):
         assert self.inputBuffer != ""
 
         self.inputBuffer = self.inputBuffer[:-1]
         self.candidateList = self.wordMapping.get(self.inputBuffer, [])
+        if self.callback:
+            self.callback(self.inputBuffer, self.candidateList)
         self.update_keyboard_grab()
 
     def handle_alpha(self, alpha):
@@ -120,10 +129,14 @@ class BoshiCore:
         else:
             self.inputBuffer += alpha
             self.candidateList = self.wordMapping.get(self.inputBuffer, [])
+        if self.callback:
+            self.callback(self.inputBuffer, self.candidateList)
 
     def handle_punctuation(self, punctuation):
         self.inputBuffer += punctuation
         self.candidateList = self.wordMapping.get(self.inputBuffer, [])
+        if self.callback:
+            self.callback(self.inputBuffer, self.candidateList)
 
     def handle_keyboard_event(self, msg_ptr):
         msg = msg_ptr.decode("utf-8")
