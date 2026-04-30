@@ -1,5 +1,6 @@
 use rdev::{Event, EventType, Key, grab};
-use std::ffi::CString;
+use std::ffi::{CStr, CString};
+use enigo::{Enigo, Keyboard, Settings};
 use std::os::raw::c_char;
 use std::sync::atomic::AtomicU8;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -66,6 +67,27 @@ pub extern "C" fn set_intercept_status(status: u8) {
 #[unsafe(no_mangle)]
 pub extern "C" fn get_intercept_status() -> u8 {
     INTERCEPT_STATUS.load(Ordering::SeqCst)
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn output_word(ptr: *const c_char) {
+    if ptr.is_null() {
+        return;
+    }
+
+    let text = unsafe {
+        match CStr::from_ptr(ptr).to_str() {
+            Ok(s) => s,
+            Err(_) => return,
+        }
+    };
+
+    let mut enigo = match Enigo::new(&Settings::default()) {
+        Ok(e) => e,
+        Err(_) => return,
+    };
+
+    let _ = enigo.text(text);
 }
 
 fn handle_event(event: Event) -> Option<Event> {

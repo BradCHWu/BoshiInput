@@ -38,3 +38,7 @@ class KeyboardGrab:
     @staticmethod
     def GetIntercept():
         return KeyboardGrab.bind_library.get_intercept_status()
+
+    @staticmethod
+    def Output(message):
+        KeyboardGrab.bind_library.output_word(message.encode("utf-8"))

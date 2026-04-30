@@ -7,4 +7,5 @@ edition = "2024"
 crate-type = ["cdylib"]
 
 [dependencies]
+enigo = "0.6.1"
 rdev = { version = "0.5.3", features = ["unstable_grab"] }

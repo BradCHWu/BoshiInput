@@ -101,6 +101,9 @@ class BoshiCore:
             self.elect = self.candidateList[selection]
         self.inputBuffer = ""
         self.candidateList = []
+        if self.elect:
+            KeyboardGrab.Output(self.elect)
+            self.elect = None
 
     def handle_backspace(self):
         assert self.inputBuffer != ""

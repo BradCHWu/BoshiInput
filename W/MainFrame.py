@@ -11,7 +11,7 @@ from W.BoshiInputView import BoshiInputView
 from Config import config_manager, LanguageSetting
 from FileConvert import BinFileToJson
 from KeyboardGrab import KeyboardGrab
-from KeyboardMove import KeyboardMove
+
 
 
 class MainFrame(wx.Frame):
@@ -51,8 +51,6 @@ class MainFrame(wx.Frame):
         cur_path = os.path.abspath(os.path.curdir)
         dll_file = os.path.join(cur_path, self.HOOK_LIBRARY_PATH)
         self.grab = KeyboardGrab.Hook(dll_file, self.handleKeyboardEvent)
-
-        self.keyboard = KeyboardMove()
 
         bin_file = os.path.join(cur_path, self.DEFAULT_MAPPING_FILE)
         if os.path.exists(bin_file):

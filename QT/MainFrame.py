@@ -10,13 +10,10 @@ from QT.CommonTool import fromQPoint, toQPoint
 from QT.BoshiInputView import BoshiInputView
 
 from Config import config_manager, LanguageSetting
-from KeyboardMove import KeyboardMove
 from BoshiCore import BoshiCore
 
 
 class MainFrame(QMainWindow):
-    wordCandidateSignal = Signal(str, list)
-
     def __init__(self):
         super().__init__()
         self._initial_logging()
@@ -24,9 +21,8 @@ class MainFrame(QMainWindow):
         self.setWindowFlags(self._window_style())
         self.setWindowIcon(LoadPNG(png_Boshi))
 
-        self.wordCandidateSignal.connect(self._handle_keypress)
 
-        self.keyboard = KeyboardMove()
+
         self.boshiCore = BoshiCore()
 
         self._view = BoshiInputView(self)
@@ -36,58 +32,6 @@ class MainFrame(QMainWindow):
         self._create_tray_icon()
         logging.info(f"Application {Name()} initialize")
 
-    def updateCandidates(self, buf):
-        self.inputBuffer = buf
-        result = self.wordMapping.get(buf, [])
-        self.wordCandidateSignal.emit(buf, result)
-
-    def commitCandidate(self, buf, num):
-        result = self.wordMapping.get(buf, [])
-        if result and num < len(result):
-            self.keyboard.Type(result[num])
-        self.updateCandidates("")
-
-    def handleKeyboardEvent(self, msg_ptr):
-        message = msg_ptr.decode("utf-8")
-        if message == "Ctrl+Space":
-            self.updateCandidates("")
-            config_manager.NextLanguage()
-            if config_manager.IsEnglish():
-                KeyboardGrab.SetIntercept(0)
-            else:
-                KeyboardGrab.SetIntercept(1)
-            self.wordCandidateSignal.emit("SWITCH", [])
-            return
-
-        if config_manager.IsEnglish():
-            return
-
-        comma_value = self.punctuationMapping.get(message, None)
-        digit_value = self.digitKeyMapping.get(message, None)
-        alpha_value = self.alphaKeyMapping.get(message, None)
-
-        if alpha_value:
-            if alpha_value == "v" and self.inputBuffer:
-                self.commitCandidate(self.inputBuffer, 1)
-            else:
-                self.updateCandidates(self.inputBuffer + alpha_value)
-        elif comma_value:
-            self.updateCandidates(self.inputBuffer + comma_value)
-        elif message == "SPACE":
-            self.commitCandidate(self.inputBuffer, 0)
-        elif message == "BACKSPACE":  # 候選區有值，調整候選區，沒值則執行倒退
-            if self.inputBuffer:
-                self.updateCandidates(self.inputBuffer[:-1])
-            else:
-                self.keyboard.TapBackspace()
-        elif digit_value:  # 有數字的話，就是選項
-            if self.inputBuffer:  # 只有在有候選區的時候才處理數字選項
-                num = int(digit_value)
-                self.commitCandidate(self.inputBuffer, num)
-            else:
-                self.keyboard.Type(digit_value)
-        elif message == "ESC":
-            self.updateCandidates("")
 
     def _window_style(self):
         window_style = Qt.WindowType.FramelessWindowHint
@@ -145,13 +89,6 @@ class MainFrame(QMainWindow):
         else:
             self.show()
 
-    def _handle_keypress(self, key, keyList):
-        if key == "SWITCH":
-            self._view.ShowLanguage()
-            self._hide(self._hide_action.isChecked())
-            logging.info(f"{config_manager.Language()}")
-        else:
-            self._view.Send(key, keyList)
 
     def closeEvent(self, event):
         config_manager.Save()
