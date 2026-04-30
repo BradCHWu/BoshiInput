@@ -12,7 +12,7 @@ static HOOK_RUNNING: AtomicBool = AtomicBool::new(false);
 // 0: 不攔截
 // 1: 攔截字母、數字、標點符號
 // 2: 攔截字母、標點符號
-static INTERCEPT_STATUS: AtomicU8 = AtomicU8::new(0);
+static INTERCEPT_STATUS: AtomicU8 = AtomicU8::new(1);
 
 const C: u8 = 1 << 0;
 const A: u8 = 1 << 1;
