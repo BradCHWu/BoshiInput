@@ -16,7 +16,7 @@ from KeyboardMove import KeyboardMove
 
 
 class MainFrame(QMainWindow):
-    HOOK_LIBRARY_PATH = "keyboard.dll" if os.name == "nt" else "keyboard.so"
+    HOOK_LIBRARY_PATH = "BoshiKeyboard.dll" if os.name == "nt" else "keyboard.so"
     DEFAULT_MAPPING_FILE = "liu.bin"
     wordCandidateSignal = Signal(str, list)
 

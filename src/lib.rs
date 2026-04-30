@@ -73,11 +73,6 @@ fn handle_event(event: Event) -> Option<Event> {
         return Some(event);
     }
 
-    let status = INTERCEPT_STATUS.load(Ordering::SeqCst);
-    if status == 0 {
-        return Some(event);
-    }
-
     match event.event_type {
         EventType::KeyPress(key) => {
             // 1. 更新修飾鍵狀態並獲取當前快照
@@ -88,6 +83,10 @@ fn handle_event(event: Event) -> Option<Event> {
                 return Some(event);
             }
 
+            let status = INTERCEPT_STATUS.load(Ordering::SeqCst);
+            if status == 0 {
+                return Some(event);
+            }
             // 3. 處理攔截邏輯
             if mods == 0 {
                 if is_in_intercept_list(key, status) {
