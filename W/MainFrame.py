@@ -11,7 +11,7 @@ from Config import config_manager
 
 
 class MainFrame(wx.Frame):
-    WIDTH = 330
+    WIDTH = 340
     HEIGHT = 30
 
     def __init__(self):

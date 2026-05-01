@@ -70,12 +70,31 @@ class BoshiCore:
         self.inputBuffer = ""
         self.candidateList = []
         self.callback = None
+        self.pageIndex = 1
 
-    def update_keyboard_grab(self):
-        if not self.inputBuffer:
-            KeyboardGrab.SetIntercept(2)
+    def send_callback(self):
+        total = len(self.candidateList)
+        if total <= 4:
+            key = self.inputBuffer
+            keyList = self.candidateList
         else:
-            KeyboardGrab.SetIntercept(1)
+            pageCount = (total - 1) // 4 + 1
+            if self.pageIndex <= 0:
+                self.pageIndex += pageCount
+            elif self.pageIndex > pageCount:
+                self.pageIndex -= pageCount
+            temp = [self.inputBuffer]
+            temp.append(f"{self.pageIndex}")
+            temp.append(f"{pageCount}")
+            key = "|".join(temp)
+            s = 4 * (self.pageIndex - 1)
+            e = s + 4
+            keyList = self.candidateList[s:e]
+
+        if self.callback:
+            self.callback(key, keyList)
+        msg = 1 if self.inputBuffer else 2
+        KeyboardGrab.SetIntercept(msg)
 
     def handle_ctrl_space(self):
         if KeyboardGrab.GetIntercept():
@@ -84,6 +103,7 @@ class BoshiCore:
             KeyboardGrab.SetIntercept(2)
         self.inputBuffer = ""
         self.candidateList = []
+        self.pageIndex = 1
         if self.callback:
             status = "1" if KeyboardGrab.GetIntercept() else "0"
             self.callback("SWITCH", [status])
@@ -91,37 +111,33 @@ class BoshiCore:
     def handle_esc(self):
         self.inputBuffer = ""
         self.candidateList = []
-        if self.callback:
-            self.callback(self.inputBuffer, self.candidateList)
-        self.update_keyboard_grab()
+        self.pageIndex = 1
+        self.send_callback()
 
     def handle_backspace(self):
-        assert self.inputBuffer != ""
-
         self.inputBuffer = self.inputBuffer[:-1]
         self.candidateList = self.wordMapping.get(self.inputBuffer, [])
-        if self.callback:
-            self.callback(self.inputBuffer, self.candidateList)
-        self.update_keyboard_grab()
+        self.pageIndex = 1
+        self.send_callback()
 
     def handle_selection(self, selection):
-        assert self.inputBuffer != ""
-
-        if self.candidateList and selection < len(self.candidateList):
-            elect = self.candidateList[selection]
+        s = 4 * (self.pageIndex - 1)
+        e = s + 4        
+        keyList = self.candidateList[s:e]
+        if self.candidateList and selection < len(keyList):
+            elect = keyList[selection]
             KeyboardGrab.Output(elect)
         self.inputBuffer = ""
         self.candidateList = []
-        if self.callback:
-            self.callback(self.inputBuffer, self.candidateList)
+        self.send_callback()
 
     def handle_left(self):
-        if self.callback:
-            self.callback(":" + self.inputBuffer, self.candidateList)
+        self.pageIndex -= 1
+        self.send_callback()
 
     def handle_right(self):
-        if self.callback:
-            self.callback(self.inputBuffer + ":", self.candidateList)
+        self.pageIndex += 1
+        self.send_callback()
 
     def handle_alpha(self, alpha):
         if alpha == "v" and self.candidateList:
@@ -136,14 +152,14 @@ class BoshiCore:
         else:
             self.inputBuffer += alpha
             self.candidateList = self.wordMapping.get(self.inputBuffer, [])
-        if self.callback:
-            self.callback(self.inputBuffer, self.candidateList)
+        self.pageIndex = 1
+        self.send_callback()
 
     def handle_punctuation(self, punctuation):
         self.inputBuffer += punctuation
         self.candidateList = self.wordMapping.get(self.inputBuffer, [])
-        if self.callback:
-            self.callback(self.inputBuffer, self.candidateList)
+        self.pageIndex = 1
+        self.send_callback()
 
     def handle_keyboard_event(self, msg_ptr):
         msg = msg_ptr.decode("utf-8")
@@ -175,7 +191,7 @@ class BoshiCore:
                 self.handle_punctuation(punctuation)
             elif digit:
                 self.handle_selection(int(digit))
-        self.update_keyboard_grab()
+        self.send_callback()
         logging.debug(f"inputBuffer: {self.inputBuffer}")
         logging.debug(f"candidateList: {self.candidateList}")
 
