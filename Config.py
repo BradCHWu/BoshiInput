@@ -73,8 +73,8 @@ class Config:
     def _default_config(self):
         self._config["General"] = {
             "Logging": ["Debug", "Info", "Warning", "Error"],
-            "LoggingLevel": "Debug",
-            "LoggingFile": False,
+            "LoggingLevel": "Info",
+            "LoggingFile": True,
             "Position": "100,100",
         }
 
@@ -95,7 +95,13 @@ class Config:
             self._config.write(ofile)
 
     def InstallCallback(self, callback):
-        self._boshiCore = BoshiCore(callback)
+        self._boshiCore = BoshiCore()
+        self._boshiCore.HookKeybboard()
+        self._boshiCore.InstallCallback(callback)
+
+    def UninstallCallback(self):
+        self._boshiCore.UnhookKeyboard()
+        self._boshiCore = None
 
     def SwitchLanguage(self):
         if self._boshiCore:

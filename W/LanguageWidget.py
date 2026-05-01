@@ -5,17 +5,23 @@ class LanguageWidget(wx.Panel):
     def __init__(self, parent):
         super().__init__(parent)
 
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.label = wx.StaticText(self, label="中", style=wx.ALIGN_CENTER)
         color = "#4A90E2"
-        self.SetForegroundColour(color)
-        sizer.Add(self.label, 1, wx.ALIGN_CENTER | wx.ALL, 0)
+        self.SetBackgroundColour(color)
+
+        style = wx.ALIGN_CENTER | wx.ST_NO_AUTORESIZE
+        self.label = wx.StaticText(self, label="中", style=style)
+        font = wx.Font(
+            14, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD
+        )
+        self.label.SetFont(font)
+        self.label.SetForegroundColour(wx.WHITE)
+
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.Add(self.label, 1, wx.ALL | wx.ALIGN_CENTER, 5)
         self.SetSizer(sizer)
-        # self.SetMinSize(wx.Size(40, 40))
-        # self.SetMaxSize(wx.Size(40, 40))
 
     def Update(self, language):
         if language == "1":
-            self.label.SetLabel("中")
+            self.label.SetLabelText("中")
         else:
-            self.label.SetLabel("英")
+            self.label.SetLabelText("英")

@@ -2,78 +2,58 @@ import logging
 
 import wx
 
-from W.setting import Name
-from W.BoshiInputView import BoshiInputView
+from W.LanguageWidget import LanguageWidget
+from W.InputWidget import InputWidget
+from W.CandidateWidget import CandidateWidget
 from W.TaskBarIcon import TaskBarIcon
 
 from Config import config_manager
 
 
 class MainFrame(wx.Frame):
-    WIDTH = 200
-    HEIGHT = 20
+    WIDTH = 330
+    HEIGHT = 30
 
     def __init__(self):
         style = wx.STAY_ON_TOP | wx.FRAME_NO_TASKBAR | wx.NO_BORDER
         size = (self.WIDTH, self.HEIGHT)
-        super().__init__(None, title="IME Window", style=style, size=size)
+        super().__init__(None, style=style, size=size)
         config_manager.InstallCallback(self._input_callback)
 
-        logging.info(f"Application {Name()} initialize")
-
-        self._restorePosition()
-        self._create_tray_icon()
-
-        self.mouse_pos = wx.Point(0, 0)
-        self._view = BoshiInputView(self)
-        self.Layout()
-
-        self._bind_drag_recursively(self)
-
-    def _input_callback(self, in_char, candidates):
-        logging.debug(f"Input: {in_char}, Candidates: {candidates}")
-        self._view.Update(in_char, candidates)
-
-    def _restorePosition(self):
-        p = config_manager.GetPosition()
-        logging.info(f"Move to {p}")
-        self.Move(*p)
-
-    def _create_tray_icon(self):
+        self.SetBackgroundColour("white")
         TaskBarIcon(self)
 
-    def _bind_drag_recursively(self, parent):
-        for child in parent.GetChildren():
-            child.Bind(wx.EVT_LEFT_DOWN, self.OnMouseDown)
-            child.Bind(wx.EVT_MOTION, self.OnMouseMove)
-            child.Bind(wx.EVT_LEFT_UP, self.OnMouseUp)
-            self._bind_drag_recursively(child)
+        main_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        parent.Bind(wx.EVT_LEFT_DOWN, self.OnMouseDown)
-        parent.Bind(wx.EVT_MOTION, self.OnMouseMove)
-        parent.Bind(wx.EVT_LEFT_UP, self.OnMouseUp)
+        self.lang_w = LanguageWidget(self)
+        self.input_w = InputWidget(self)
+        self.cand_w = CandidateWidget(self)
 
-    def OnMouseDown(self, event):
-        obj = event.GetEventObject()
-        obj.CaptureMouse()
+        line1 = wx.StaticLine(self, style=wx.LI_VERTICAL)
+        line2 = wx.StaticLine(self, style=wx.LI_VERTICAL)
+        main_sizer.Add(self.lang_w, 1, wx.EXPAND)
+        main_sizer.Add(line1, 0, wx.EXPAND)
+        main_sizer.Add(self.input_w, 2, wx.EXPAND)
+        main_sizer.Add(line2, 0, wx.EXPAND)
+        main_sizer.Add(self.cand_w, 6, wx.EXPAND)
 
-        pos = obj.ClientToScreen(event.GetPosition())
-        self.mouse_pos = pos - self.GetPosition()
+        self.SetSizer(main_sizer)
+        self.Layout()
+        logging.info("Appliction initialize")
 
-    def OnMouseMove(self, event):
-        if event.Dragging() and event.LeftIsDown():
-            obj = event.GetEventObject()
-            p = obj.ClientToScreen(event.GetPosition())
-            p -= self.mouse_pos
-            self.Move(p)
-            config_manager.SetPosition((p.x, p.y))
-
-    def OnMouseUp(self, event):
-        obj = event.GetEventObject()
-        if obj.HasCapture():
-            obj.ReleaseMouse()
+    def _input_callback(self, in_char, candaidates):
+        logging.debug(f"Input: {in_char}, Candidates: {candaidates}")
+        if in_char == "SWITCH":
+            self.lang_w.Update(candaidates[0])
+            self.input_w.Update("")
+            self.cand_w.Update([])
+        else:
+            self.input_w.Update(in_char)
+            self.cand_w.Update(candaidates)
 
     def OnClose(self):
-        logging.info(f"Application {Name()} close")
-        config_manager.Save()
+        config_manager.UninstallCallback()
+        pos = self.GetPosition()
+        config_manager.SetPosition((pos.x, pos.y))
+        logging.info("Appliction closed")
         self.Close()

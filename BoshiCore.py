@@ -56,12 +56,10 @@ class BoshiCore:
         "KEYZ": "z",
     }
 
-    def __init__(self, callback):
+    def __init__(self):
+        self.isHook = False
+
         cur_path = os.path.abspath(os.path.curdir)
-
-        dll_file = os.path.join(cur_path, self.HOOK_LIBRARY_PATH)
-        KeyboardGrab.Hook(dll_file, self.handle_keyboard_event)
-
         bin_file = os.path.join(cur_path, self.DEFAULT_MAPPING_FILE)
         if os.path.exists(bin_file):
             self.wordMapping = BinFileToJson(bin_file)
@@ -71,7 +69,7 @@ class BoshiCore:
 
         self.inputBuffer = ""
         self.candidateList = []
-        self.callback = callback
+        self.callback = None
 
     def update_keyboard_grab(self):
         if not self.inputBuffer:
@@ -168,6 +166,29 @@ class BoshiCore:
         self.update_keyboard_grab()
         logging.debug(f"inputBuffer: {self.inputBuffer}")
         logging.debug(f"candidateList: {self.candidateList}")
+
+    def HookKeybboard(self):
+        if self.isHook:
+            logging.error("Has hooked")
+            return
+
+        cur_path = os.path.abspath(os.path.curdir)
+        dll_file = os.path.join(cur_path, self.HOOK_LIBRARY_PATH)
+        KeyboardGrab.Hook(dll_file, self.handle_keyboard_event)
+        logging.info(f"Hook to {dll_file}")
+        self.isHook = True
+
+    def UnhookKeyboard(self):
+        if not self.isHook:
+            logging.error("No hook")
+            return
+
+        KeyboardGrab.Unhook()
+        logging.info("Unhook")
+        self.isHook = False
+
+    def InstallCallback(self, callback):
+        self.callback = callback
 
     def SwitchLanguage(self):
         self.handle_ctrl_space()
