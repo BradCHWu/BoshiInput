@@ -19,17 +19,16 @@ class MainFrame(wx.Frame):
         super().__init__(None, title="IME Window", style=style, size=size)
         config_manager.InstallCallback(self._input_callback)
 
-        self.SetBackgroundColour("white")
+        logging.info(f"Application {Name()} initialize")
+
         self._restorePosition()
         self._create_tray_icon()
-        logging.info(f"Application {Name()} initialize")
 
         self.mouse_pos = wx.Point(0, 0)
         self._view = BoshiInputView(self)
         self.Layout()
 
         self._bind_drag_recursively(self)
-        self.Bind(wx.EVT_CLOSE, self.closeEvent)
 
     def _input_callback(self, in_char, candidates):
         logging.debug(f"Input: {in_char}, Candidates: {candidates}")
@@ -42,11 +41,6 @@ class MainFrame(wx.Frame):
 
     def _create_tray_icon(self):
         TaskBarIcon(self)
-
-    def closeEvent(self, event):
-        config_manager.Save()
-        logging.info(f"Application {Name()} closed")
-        self.Close()
 
     def _bind_drag_recursively(self, parent):
         for child in parent.GetChildren():
@@ -78,3 +72,8 @@ class MainFrame(wx.Frame):
         obj = event.GetEventObject()
         if obj.HasCapture():
             obj.ReleaseMouse()
+
+    def OnClose(self):
+        logging.info(f"Application {Name()} close")
+        config_manager.Save()
+        self.Close()
