@@ -41,15 +41,16 @@ class MainFrame(wx.Frame):
         self.Layout()
         logging.info("Appliction initialize")
 
-    def _input_callback(self, in_char, candaidates):
-        logging.debug(f"Input: {in_char}, Candidates: {candaidates}")
+    def _input_callback(self, in_char, candidates):
+        logging.debug(f"Input: {in_char}, Candidates: {candidates}")
         if in_char == "SWITCH":
-            self.lang_w.Update(candaidates[0])
+            self.lang_w.Update(candidates[0])
             self.input_w.Update("")
             self.cand_w.Update([])
         else:
+            if len()
             self.input_w.Update(in_char)
-            self.cand_w.Update(candaidates)
+            self.cand_w.Update(candidates)
 
     def OnClose(self):
         config_manager.UninstallCallback()

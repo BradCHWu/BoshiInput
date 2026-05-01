@@ -1,8 +1,13 @@
-from FileConvert import BinFileToJson
+from BoshiCore import BoshiCore
+
+
+def print_message(key, keyList):
+    print(f"{key} --- {keyList}")
+
 
 if __name__ == "__main__":
-    value = BinFileToJson("liu.bin")
-
-    AA = [len(v) for v in value.values()]
-    keys = list(value.keys())
-    print(keys[121], AA.index(max(AA)), max(AA))
+    boshiCore = BoshiCore()
+    boshiCore.HookKeybboard()
+    boshiCore.InstallCallback(print_message)
+    while True:
+        pass

@@ -110,14 +110,31 @@ fn handle_event(event: Event) -> Option<Event> {
                 return Some(event);
             }
             // 3. 處理攔截邏輯
-            if mods == 0 {
-                if is_in_intercept_list(key, status) {
-                    let msg = format!("{:?}", key).to_uppercase();
-                    send_to_python(&msg);
-                    return None; // 正式攔截
+            if status == 1 {
+                if mods == 0 {
+                    if is_all_intercept_list(key) {
+                        let msg = format!("{:?}", key).to_uppercase();
+                        send_to_python(&msg);
+                        return None; // 正式攔截
+                    }
+                } else if (mods & S) != 0 {
+                    if key == Key::Comma {
+                        send_to_python("LEFT");
+                        return None;
+                    } else if key == Key::Dot {
+                        send_to_python("RIGHT");
+                        return None;
+                    }
+                }
+            } else if status == 2 {
+                if mods == 0 {
+                    if is_part_intercept_list(key) {
+                        let msg = format!("{:?}", key).to_uppercase();
+                        send_to_python(&msg);
+                        return None; // 正式攔截
+                    }
                 }
             }
-
             Some(event)
         }
         EventType::KeyRelease(key) => {
@@ -162,88 +179,88 @@ fn is_special_key_and_notified(key: Key, mods: u8) -> bool {
     false
 }
 
-fn is_in_intercept_list(key: Key, status: u8) -> bool {
-    match status {
-        1 => match key {
-            Key::KeyA
-            | Key::KeyB
-            | Key::KeyC
-            | Key::KeyD
-            | Key::KeyE
-            | Key::KeyF
-            | Key::KeyG
-            | Key::KeyH
-            | Key::KeyI
-            | Key::KeyJ
-            | Key::KeyK
-            | Key::KeyL
-            | Key::KeyM
-            | Key::KeyN
-            | Key::KeyO
-            | Key::KeyP
-            | Key::KeyQ
-            | Key::KeyR
-            | Key::KeyS
-            | Key::KeyT
-            | Key::KeyU
-            | Key::KeyV
-            | Key::KeyW
-            | Key::KeyX
-            | Key::KeyY
-            | Key::KeyZ
-            | Key::Comma
-            | Key::Dot
-            | Key::Quote
-            | Key::LeftBracket
-            | Key::RightBracket
-            | Key::Num0
-            | Key::Num1
-            | Key::Num2
-            | Key::Num3
-            | Key::Num4
-            | Key::Num5
-            | Key::Num6
-            | Key::Num7
-            | Key::Num8
-            | Key::Num9
-            | Key::Backspace
-            | Key::Space => true,
-            _ => false,
-        },
-        2 => match key {
-            Key::KeyA
-            | Key::KeyB
-            | Key::KeyC
-            | Key::KeyD
-            | Key::KeyE
-            | Key::KeyF
-            | Key::KeyG
-            | Key::KeyH
-            | Key::KeyI
-            | Key::KeyJ
-            | Key::KeyK
-            | Key::KeyL
-            | Key::KeyM
-            | Key::KeyN
-            | Key::KeyO
-            | Key::KeyP
-            | Key::KeyQ
-            | Key::KeyR
-            | Key::KeyS
-            | Key::KeyT
-            | Key::KeyU
-            | Key::KeyV
-            | Key::KeyW
-            | Key::KeyX
-            | Key::KeyY
-            | Key::KeyZ
-            | Key::Comma
-            | Key::Dot
-            | Key::Quote
-            | Key::LeftBracket
-            | Key::RightBracket => true,
-            _ => false,
-        },
+fn is_all_intercept_list(key: Key) -> bool {
+    match key {
+        Key::KeyA
+        | Key::KeyB
+        | Key::KeyC
+        | Key::KeyD
+        | Key::KeyE
+        | Key::KeyF
+        | Key::KeyG
+        | Key::KeyH
+        | Key::KeyI
+        | Key::KeyJ
+        | Key::KeyK
+        | Key::KeyL
+        | Key::KeyM
+        | Key::KeyN
+        | Key::KeyO
+        | Key::KeyP
+        | Key::KeyQ
+        | Key::KeyR
+        | Key::KeyS
+        | Key::KeyT
+        | Key::KeyU
+        | Key::KeyV
+        | Key::KeyW
+        | Key::KeyX
+        | Key::KeyY
+        | Key::KeyZ
+        | Key::Comma
+        | Key::Dot
+        | Key::Quote
+        | Key::LeftBracket
+        | Key::RightBracket
+        | Key::Num0
+        | Key::Num1
+        | Key::Num2
+        | Key::Num3
+        | Key::Num4
+        | Key::Num5
+        | Key::Num6
+        | Key::Num7
+        | Key::Num8
+        | Key::Num9
+        | Key::Backspace
+        | Key::Space => true,
+        _ => false,
+    }
+}
+
+fn is_part_intercept_list(key: Key) -> bool {
+    match key {
+        Key::KeyA
+        | Key::KeyB
+        | Key::KeyC
+        | Key::KeyD
+        | Key::KeyE
+        | Key::KeyF
+        | Key::KeyG
+        | Key::KeyH
+        | Key::KeyI
+        | Key::KeyJ
+        | Key::KeyK
+        | Key::KeyL
+        | Key::KeyM
+        | Key::KeyN
+        | Key::KeyO
+        | Key::KeyP
+        | Key::KeyQ
+        | Key::KeyR
+        | Key::KeyS
+        | Key::KeyT
+        | Key::KeyU
+        | Key::KeyV
+        | Key::KeyW
+        | Key::KeyX
+        | Key::KeyY
+        | Key::KeyZ
+        | Key::Comma
+        | Key::Dot
+        | Key::Quote
+        | Key::LeftBracket
+        | Key::RightBracket => true,
         _ => false,
     }
 }

@@ -95,6 +95,15 @@ class BoshiCore:
             self.callback(self.inputBuffer, self.candidateList)
         self.update_keyboard_grab()
 
+    def handle_backspace(self):
+        assert self.inputBuffer != ""
+
+        self.inputBuffer = self.inputBuffer[:-1]
+        self.candidateList = self.wordMapping.get(self.inputBuffer, [])
+        if self.callback:
+            self.callback(self.inputBuffer, self.candidateList)
+        self.update_keyboard_grab()
+
     def handle_selection(self, selection):
         assert self.inputBuffer != ""
 
@@ -106,14 +115,13 @@ class BoshiCore:
         if self.callback:
             self.callback(self.inputBuffer, self.candidateList)
 
-    def handle_backspace(self):
-        assert self.inputBuffer != ""
-
-        self.inputBuffer = self.inputBuffer[:-1]
-        self.candidateList = self.wordMapping.get(self.inputBuffer, [])
+    def handle_left(self):
         if self.callback:
-            self.callback(self.inputBuffer, self.candidateList)
-        self.update_keyboard_grab()
+            self.callback(":" + self.inputBuffer, self.candidateList)
+
+    def handle_right(self):
+        if self.callback:
+            self.callback(self.inputBuffer + ":", self.candidateList)
 
     def handle_alpha(self, alpha):
         if alpha == "v" and self.candidateList:
@@ -153,6 +161,10 @@ class BoshiCore:
             self.handle_backspace()
         elif msg == "SPACE":
             self.handle_selection(0)
+        elif msg == "LEFT":
+            self.handle_left()
+        elif msg == "RIGHT":
+            self.handle_right()
         else:
             alpha = self.alphaKeyMapping.get(msg, None)
             digit = self.digitKeyMapping.get(msg, None)
