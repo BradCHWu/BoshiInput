@@ -1,3 +1,5 @@
+import logging
+
 import wx
 
 
@@ -30,14 +32,13 @@ class InputWidget(wx.Panel):
         self.SetSizer(sizer)
 
     def Update(self, key: str):
-        keyList = key.split("|")
-        num = len(keyList)
+        num = key.count("|")
         if num == 0:
             self.label.SetLabel(key.upper())
             self.num.SetLabel("")
         elif num == 1:
+            keyList = key.split("|")
             self.label.SetLabel(keyList[0].upper())
-            self.num.SetLabel("")
+            self.num.SetLabel(keyList[1])
         else:
-            self.label.SetLabel(keyList[0].upper())
-            self.num.SetLabel(f"{keyList[1]}/{keyList[2]}")
+            logging.warning(f"Some error occurs: {key}")

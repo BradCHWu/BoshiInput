@@ -85,8 +85,7 @@ class BoshiCore:
             elif self.pageIndex > pageCount:
                 self.pageIndex -= pageCount
             temp = [self.inputBuffer]
-            temp.append(f"{self.pageIndex}")
-            temp.append(f"{pageCount}")
+            temp.append(f"{self.pageIndex}/{pageCount}")
             key = "|".join(temp)
             s = self.candidateNumber * (self.pageIndex - 1)
             e = s + self.candidateNumber
