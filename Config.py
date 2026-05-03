@@ -39,13 +39,13 @@ class Config:
             self.Save()
 
     def _initial_logging(self):
-        general = self._config["General"]
-        if general["LoggingLevel"] not in general["Logging"]:
-            general["LoggingLevel"] = "Info"
+        _logging = self._config["Logging"]
+        if _logging["Level"] not in _logging["Lists"]:
+            _logging["Level"] = "Info"
             self.Save()
 
         level = logging.INFO
-        match general["LoggingLevel"]:
+        match _logging["Level"]:
             case "Debug":
                 level = logging.DEBUG
             case "Info":
@@ -58,7 +58,7 @@ class Config:
         logging_format = (
             "[%(levelname)s] %(filename)s %(funcName)s %(lineno)s %(message)s"
         )
-        if self._config.getboolean("General", "LoggingFile"):
+        if self._config.getboolean("Logging", "File"):
             now = datetime.datetime.now().strftime("%Y-%m-%d-%H%M-%S")
             logging_file = f"{self._file_name}_{now}.log"
             logging.basicConfig(
@@ -71,11 +71,14 @@ class Config:
             logging.basicConfig(level=logging_level, format=logging_format)
 
     def _default_config(self):
+        self._config["Logging"] = {
+            "Lists": ["Debug", "Info", "Warning", "Error"],
+            "Level": "Info",
+            "File": True,
+        }
         self._config["General"] = {
-            "Logging": ["Debug", "Info", "Warning", "Error"],
-            "LoggingLevel": "Info",
-            "LoggingFile": True,
             "Position": "100,100",
+            "Cadidate": 4,
         }
 
     def SetPosition(self, pos: tuple):
@@ -86,6 +89,14 @@ class Config:
         pos_str = self._config.get("General", "Position")
         pos = map(int, pos_str.split(","))
         return pos
+
+    def SetCadidateNumber(self, num) -> None:
+        self._config.set("General", "Cadidate", f"{num}")
+        if self._boshiCore:
+            self._boshiCore.SetCandidateNumber(num)
+
+    def GetCadidateNumber(self) -> int:
+        return self._config.getint("General", "Cadidate")
 
     def Load(self) -> None:
         self._config.read(self._config_file, encoding="utf-8")
@@ -98,6 +109,9 @@ class Config:
         self._boshiCore = BoshiCore()
         self._boshiCore.HookKeybboard()
         self._boshiCore.InstallCallback(callback)
+
+        num = self.GetCadidateNumber()
+        self._boshiCore.SetCandidateNumber(num)
 
     def UninstallCallback(self):
         self._boshiCore.UnhookKeyboard()

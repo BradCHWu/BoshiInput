@@ -69,16 +69,17 @@ class BoshiCore:
 
         self.inputBuffer = ""
         self.candidateList = []
+        self.candidateNumber = 4
         self.callback = None
         self.pageIndex = 1
 
     def send_callback(self):
         total = len(self.candidateList)
-        if total <= 4:
+        if total <= self.candidateNumber:
             key = self.inputBuffer
             keyList = self.candidateList
         else:
-            pageCount = (total - 1) // 4 + 1
+            pageCount = (total - 1) // self.candidateNumber + 1
             if self.pageIndex <= 0:
                 self.pageIndex += pageCount
             elif self.pageIndex > pageCount:
@@ -87,8 +88,8 @@ class BoshiCore:
             temp.append(f"{self.pageIndex}")
             temp.append(f"{pageCount}")
             key = "|".join(temp)
-            s = 4 * (self.pageIndex - 1)
-            e = s + 4
+            s = self.candidateNumber * (self.pageIndex - 1)
+            e = s + self.candidateNumber
             keyList = self.candidateList[s:e]
 
         if self.callback:
@@ -121,8 +122,8 @@ class BoshiCore:
         self.send_callback()
 
     def handle_selection(self, selection):
-        s = 4 * (self.pageIndex - 1)
-        e = s + 4        
+        s = self.candidateNumber * (self.pageIndex - 1)
+        e = s + self.candidateNumber
         keyList = self.candidateList[s:e]
         if self.candidateList and selection < len(keyList):
             elect = keyList[selection]
@@ -214,6 +215,12 @@ class BoshiCore:
         KeyboardGrab.Unhook()
         logging.info("Unhook")
         self.isHook = False
+
+    def SetCandidateNumber(self, num):
+        self.candidateNumber = num
+
+    def GetCandidateNumber(self):
+        return self.candidateNumber
 
     def InstallCallback(self, callback):
         self.callback = callback
