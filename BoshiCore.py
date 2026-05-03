@@ -1,13 +1,22 @@
 import os
 import logging
+from enum import Enum
 
 from KeyboardGrab import KeyboardGrab
-from FileConvert import BinFileToJson
+from FileConvert import BoiFileToJson
+
+
+class LanguageSetting(Enum):
+    ENGLISH = "0"
+    TRADITIONAL = "1"
+    SIMPLIFIED = "2"
+    TAIWANESE = "3"
+    JAPANESE = "4"
 
 
 class BoshiCore:
     HOOK_LIBRARY_PATH = "BoshiKeyboard.dll" if os.name == "nt" else "keyboard.so"
-    DEFAULT_MAPPING_FILE = "liu.bin"
+    DEFAULT_MAPPING_FILE = "liu.boi"
     punctuationMapping = {
         "COMMA": ",",
         "DOT": ".",
@@ -60,18 +69,19 @@ class BoshiCore:
         self.isHook = False
 
         cur_path = os.path.abspath(os.path.curdir)
-        bin_file = os.path.join(cur_path, self.DEFAULT_MAPPING_FILE)
-        if os.path.exists(bin_file):
-            self.wordMapping = BinFileToJson(bin_file)
+        boi_file = os.path.join(cur_path, self.DEFAULT_MAPPING_FILE)
+        if os.path.exists(boi_file):
+            self.wordMapping = BoiFileToJson(boi_file)
         else:
             self.wordMapping = None
-            logging.error(f"{bin_file} not found")
+            logging.error(f"{boi_file} not found")
 
         self.inputBuffer = ""
         self.candidateList = []
         self.candidateNumber = 4
         self.callback = None
         self.pageIndex = 1
+        self.languageSetting = LanguageSetting.TRADITIONAL
 
     def send_callback(self):
         total = len(self.candidateList)
@@ -96,17 +106,26 @@ class BoshiCore:
         msg = 1 if self.inputBuffer else 2
         KeyboardGrab.SetIntercept(msg)
 
+    def send_switch(self):
+        self.inputBuffer = ""
+        self.candidateList = []
+        self.pageIndex = 1
+
+        if not self.callback:
+            return
+
+        status = self.languageSetting.value
+        if not KeyboardGrab():
+            status = LanguageSetting.ENGLISH.value
+        self.callback("SWITCH", [status])
+
     def handle_ctrl_space(self):
         if KeyboardGrab.GetIntercept():
             KeyboardGrab.SetIntercept(0)
         else:
             KeyboardGrab.SetIntercept(2)
-        self.inputBuffer = ""
-        self.candidateList = []
-        self.pageIndex = 1
-        if self.callback:
-            status = "1" if KeyboardGrab.GetIntercept() else "0"
-            self.callback("SWITCH", [status])
+
+        self.send_switch()
 
     def handle_esc(self):
         self.inputBuffer = ""
@@ -115,21 +134,37 @@ class BoshiCore:
         self.send_callback()
 
     def handle_backspace(self):
+        mapping = self.wordMapping[self.languageSetting.value]
+
         self.inputBuffer = self.inputBuffer[:-1]
-        self.candidateList = self.wordMapping.get(self.inputBuffer, [])
+        self.candidateList = mapping.get(self.inputBuffer, [])
         self.pageIndex = 1
         self.send_callback()
 
     def handle_selection(self, selection):
-        s = self.candidateNumber * (self.pageIndex - 1)
-        e = s + self.candidateNumber
-        keyList = self.candidateList[s:e]
-        if self.candidateList and selection < len(keyList):
-            elect = keyList[selection]
-            KeyboardGrab.Output(elect)
-        self.inputBuffer = ""
-        self.candidateList = []
-        self.send_callback()
+        spefic = True
+        if self.inputBuffer == ",,t":
+            self.languageSetting = LanguageSetting.TRADITIONAL
+        elif self.inputBuffer == ",,c":
+            self.languageSetting = LanguageSetting.SIMPLIFIED
+        elif self.inputBuffer == ",,ct":
+            self.languageSetting = LanguageSetting.TAIWANESE
+        elif self.inputBuffer == ",,j":
+            self.languageSetting = LanguageSetting.JAPANESE
+        else:
+            spefic = False
+        if spefic:
+            self.send_switch()
+        else:
+            s = self.candidateNumber * (self.pageIndex - 1)
+            e = s + self.candidateNumber
+            keyList = self.candidateList[s:e]
+            if self.candidateList and selection < len(keyList):
+                elect = keyList[selection]
+                KeyboardGrab.Output(elect)
+            self.inputBuffer = ""
+            self.candidateList = []
+            self.send_callback()
 
     def handle_left(self):
         self.pageIndex -= 1
@@ -140,9 +175,11 @@ class BoshiCore:
         self.send_callback()
 
     def handle_alpha(self, alpha):
+        mapping = self.wordMapping[self.languageSetting.value]
+
         if alpha == "v" and self.candidateList:
             self.inputBuffer += alpha
-            tempCandidateList = self.wordMapping.get(self.inputBuffer, [])
+            tempCandidateList = mapping.get(self.inputBuffer, [])
             if len(self.candidateList) < 2:
                 self.candidateList = tempCandidateList
             else:
@@ -151,13 +188,15 @@ class BoshiCore:
                     self.candidateList.extend(tempCandidateList)
         else:
             self.inputBuffer += alpha
-            self.candidateList = self.wordMapping.get(self.inputBuffer, [])
+            self.candidateList = mapping.get(self.inputBuffer, [])
         self.pageIndex = 1
         self.send_callback()
 
     def handle_punctuation(self, punctuation):
+        mapping = self.wordMapping[self.languageSetting.value]
+
         self.inputBuffer += punctuation
-        self.candidateList = self.wordMapping.get(self.inputBuffer, [])
+        self.candidateList = mapping.get(self.inputBuffer, [])
         self.pageIndex = 1
         self.send_callback()
 

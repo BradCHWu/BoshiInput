@@ -21,7 +21,14 @@ class LanguageWidget(wx.Panel):
         self.SetSizer(sizer)
 
     def Update(self, language):
-        if language == "1":
-            self.label.SetLabelText("中")
-        else:
-            self.label.SetLabelText("英")
+        match language:
+            case "1":
+                self.label.SetLabel("中")
+            case "2":
+                self.label.SetLabel("簡")
+            case "3":
+                self.label.SetLabel("台")
+            case "4":
+                self.label.SetLabel("日")
+            case _:
+                self.label.SetText("英")

@@ -20,7 +20,7 @@ def _get_bits(start, i, bytes_data):
     return value
 
 
-def TabtoJson(tab_file: str, json_file: str) -> None:
+def TabFileToJsonFile(tab_file: str, json_file: str) -> None:
     try:
         with open(tab_file, "rb") as f:
             bytes_data = list(f.read())
@@ -66,33 +66,55 @@ def TabtoJson(tab_file: str, json_file: str) -> None:
         json.dump(output_dict, ofile, indent=4, ensure_ascii=False)
 
 
-def JsonToBinFile(json_data: str, bin_file: str) -> None:
-    with open(bin_file, "wb", encoding="utf-8") as ofile:
-        compressed = zlib.compress(json_data.encode())
+def JsonToBoiFile(json_data: dict, bin_file: str) -> None:
+    json_string = json.dumps(json_data)
+    compressed = zlib.compress(json_string.encode("utf-8"))
+    with open(bin_file, "wb") as ofile:
         ofile.write(compressed)
 
 
-def JsonFileToBinFile(json_file: str, bin_file: str) -> None:
-    with open(json_file, encoding="utf-8") as ifile:
-        data = json.load(ifile)
-    JsonToBinFile(data, bin_file)
+def JsonListToBoiFile(json_list: list[str], bin_file: str) -> None:
+    json_data = {}
+    for i, json_file in enumerate(json_list):
+        with open(json_file, encoding="utf-8") as ifile:
+            data = json.load(ifile)
+        json_data[i + 1] = data
+    JsonToBoiFile(json_data, bin_file)
 
 
-def BinFileToJson(bin_file: str) -> dict:
+def BoiFileToJson(bin_file: str) -> dict:
     with open(bin_file, "rb") as ifile:
         compressed = ifile.read()
     decompressed = zlib.decompress(compressed)
-    json_string = decompressed.decode()
+    json_string = decompressed.decode("utf-8")
     return json.loads(json_string)
 
 
-def BinFileToJsonFile(bin_file: str, json_file: str) -> None:
-    json_data = BinFileToJson(bin_file)
+def BoiFileToJsonFile(bin_file: str, json_file: str) -> None:
+    json_data = BoiFileToJson(bin_file)
     with open(json_file, "w", encoding="utf-8") as ofile:
         json.dump(json_data, ofile, ensure_ascii=False, indent=4)
 
 
 if __name__ == "__main__":
-    TabtoJson("liu-uni.tab")
-    JsonFileToBinFile("liu.json", "liu.bin")
-    BinFileToJsonFile("liu.bin", "liu.json")
+    tabFileList = [
+        "Tools/liu-uni.tab",
+        "Tools/liu-uni2.tab",
+        "Tools/liu-uni3.tab",
+        "Tools/liu-uni4.tab",
+    ]
+    jsonFileList = [
+        "liu-uni1.json",
+        "liu-uni2.json",
+        "liu-uni3.json",
+        "liu-uni4.json",
+    ]
+    num = len(tabFileList)
+    for i in range(num):
+        tabFile = tabFileList[i]
+        jsonFile = jsonFileList[i]
+        TabFileToJsonFile(tabFile, jsonFile)
+    JsonListToBoiFile(jsonFileList, "liu.boi")
+    BoiFileToJsonFile("liu.boi", "liu.json")
+    # JsonFileToBinFile("liu.json", "liu.bin")
+    # BinFileToJsonFile("liu.bin", "liu.json")
