@@ -14,8 +14,8 @@ class LanguageSetting(Enum):
     JAPANESE = "4"
 
 
-class BoshiCore:
-    HOOK_LIBRARY_PATH = "BoshiKeyboard.dll" if os.name == "nt" else "keyboard.so"
+class OwlCore:
+    HOOK_LIBRARY_PATH = "OwlKeyboard.dll" if os.name == "nt" else "keyboard.so"
     DEFAULT_MAPPING_FILE = "liu.boi"
     punctuationMapping = {
         "COMMA": ",",

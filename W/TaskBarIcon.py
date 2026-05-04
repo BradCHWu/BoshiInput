@@ -3,14 +3,14 @@ import logging
 import wx
 import wx.adv
 
-from W.setting import LoadPNG, png_Boshi, Name, Version
+from W.setting import LoadPNG, png_Owl, Name, Version
 
 
 class TaskBarIcon(wx.adv.TaskBarIcon):
     def __init__(self, frame):
         super().__init__()
         self.frame = frame
-        self.SetIcon(LoadPNG(png_Boshi), Name())
+        self.SetIcon(LoadPNG(png_Owl), Name())
 
         self.Bind(wx.adv.EVT_TASKBAR_RIGHT_UP, self.OnRightClick)
     
@@ -37,11 +37,11 @@ class TaskBarIcon(wx.adv.TaskBarIcon):
     def OnAbout(self, event):
         info = wx.adv.AboutDialogInfo()
     
-        info.SetName("BoshiInput")
+        info.SetName(Name())
         info.SetVersion(Version())
         info.SetCopyright("(C) 2026 Brad Wu")
         info.SetDescription("輸入法")
         info.SetDevelopers(["巫志鴻 (Brad Wu)"])
     
-        info.SetIcon(wx.Icon(LoadPNG(png_Boshi)))
+        info.SetIcon(wx.Icon(LoadPNG(png_Owl)))
         wx.adv.AboutBox(info)

@@ -1,4 +1,4 @@
-from BoshiCore import BoshiCore
+from OwlCore import OwlCore
 
 
 def print_message(key, keyList):
@@ -6,7 +6,7 @@ def print_message(key, keyList):
 
 
 if __name__ == "__main__":
-    boshiCore = BoshiCore()
+    boshiCore = OwlCore()
     boshiCore.HookKeybboard()
     boshiCore.InstallCallback(print_message)
     while True:

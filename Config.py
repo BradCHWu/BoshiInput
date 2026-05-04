@@ -3,13 +3,13 @@ import os
 import logging
 import datetime
 
-from BoshiCore import BoshiCore
+from OwlCore import OwlCore
 
 
 class Config:
     _instance = None
     _config = None
-    _file_name = "BoshiInput"
+    _file_name = "OwlInput"
 
     def __new__(cls):
         if cls._instance is None:
@@ -100,7 +100,7 @@ class Config:
             self._config.write(ofile)
 
     def InstallCallback(self, callback):
-        self._boshiCore = BoshiCore()
+        self._boshiCore = OwlCore()
         self._boshiCore.HookKeybboard()
         self._boshiCore.InstallCallback(callback)
 

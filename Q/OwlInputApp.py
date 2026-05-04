@@ -5,7 +5,7 @@ from Q.MainFrame import MainFrame
 from Q.setting import Name
 
 
-class BoshiInputApp(QApplication):
+class OwlInputApp(QApplication):
     def __init__(self, argv):
         super().__init__(argv)
         self.status = True

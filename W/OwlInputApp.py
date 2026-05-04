@@ -6,7 +6,7 @@ from W.DragEventFilter import DragEventFilter
 from W.MainFrame import MainFrame
 
 
-class BoshiInputApp(wx.App):
+class OwlInputApp(wx.App):
     def OnInit(self):
         p = config_manager.GetPosition()
 

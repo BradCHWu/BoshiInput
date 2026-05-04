@@ -18,7 +18,7 @@ class ViewWidget(Enum):
     CANDIDATE = auto()
 
 
-class BoshiInputView(QWidget):
+class OwlInputView(QWidget):
     HEIGHT = 20
     WIDTH = 10
 

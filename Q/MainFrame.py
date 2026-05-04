@@ -5,8 +5,8 @@ from PySide6.QtWidgets import QMainWindow, QSystemTrayIcon, QMenu, QApplication
 from PySide6.QtCore import Qt, QPoint, QRect, QSize
 from PySide6.QtGui import QAction
 
-from setting import LoadPNG, png_Boshi, Name
-from Q.BoshiInputView import BoshiInputView
+from setting import LoadPNG, png_Owl, Name
+from Q.OwlInputView import OwlInputView
 
 from Config import config_manager
 
@@ -20,9 +20,9 @@ class MainFrame(QMainWindow):
         window_style |= Qt.WindowType.Tool
         window_style |= Qt.WindowType.WindowStaysOnTopHint
         self.setWindowFlags(window_style)
-        self.setWindowIcon(LoadPNG(png_Boshi))
+        self.setWindowIcon(LoadPNG(png_Owl))
 
-        self._view = BoshiInputView(self)
+        self._view = OwlInputView(self)
         self.setCentralWidget(self._view)
 
         self._restorePosition()
@@ -40,7 +40,7 @@ class MainFrame(QMainWindow):
         self.setGeometry(QRect(pos, sz))
 
     def _create_tray_icon(self):
-        self._tray = QSystemTrayIcon(LoadPNG(png_Boshi), self)
+        self._tray = QSystemTrayIcon(LoadPNG(png_Owl), self)
 
         menu = QMenu()
         exit_action = QAction("Close", self)

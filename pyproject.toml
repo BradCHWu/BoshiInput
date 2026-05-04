@@ -1,5 +1,5 @@
 [project]
-name = "BoshiInput"
+name = "OwlInput"
 version = "1.0.0"
 description = "個人製作的嘸蝦米輸入法"
 readme = "README.md"
@@ -9,11 +9,11 @@ dependencies = [
     "wxpython>=4.2.5",
 ]
 
-[tool.BoshiInput]
+[tool.OwlInput]
 images = "Images"
-icon = "Images\\Boshi.ico"
+icon = "Images\\Owl.ico"
 author = "(C) Brad Wu, 2026"
-description = "Boshiamy Input"
+description = "Private Boshiamy Input"
 
 [dependency-groups]
 dev = [

@@ -1,5 +1,5 @@
-from W.BoshiInputApp import BoshiInputApp
+from W.OwlInputApp import OwlInputApp
 
 if __name__ == "__main__":
-    app = BoshiInputApp()
+    app = OwlInputApp()
     app.MainLoop()
