@@ -2,14 +2,8 @@ import configparser
 import os
 import logging
 import datetime
-from enum import Enum, auto
 
 from BoshiCore import BoshiCore
-
-
-class LanguageSetting(Enum):
-    CHINESE = auto()
-    ENGLISH = auto()
 
 
 class Config:

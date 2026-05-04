@@ -110,14 +110,12 @@ class BoshiCore:
         self.inputBuffer = ""
         self.candidateList = []
         self.pageIndex = 1
-
-        if not self.callback:
-            return
-
-        status = self.languageSetting.value
-        if not KeyboardGrab.GetIntercept():
-            status = LanguageSetting.ENGLISH.value
-        self.callback("SWITCH", [status])
+        if self.callback:
+            if KeyboardGrab.GetIntercept() == 0:
+                status = LanguageSetting.ENGLISH.value
+            else:
+                status = self.languageSetting.value
+            self.callback("SWITCH", [status])
 
     def handle_ctrl_space(self):
         if KeyboardGrab.GetIntercept():
@@ -142,20 +140,14 @@ class BoshiCore:
         self.send_callback()
 
     def handle_selection(self, selection):
-        spefic = True
-        if self.inputBuffer == ",,t":
-            self.languageSetting = LanguageSetting.TRADITIONAL
-        elif self.inputBuffer == ",,c":
-            self.languageSetting = LanguageSetting.SIMPLIFIED
-        elif self.inputBuffer == ",,ct":
-            self.languageSetting = LanguageSetting.TAIWANESE
-        elif self.inputBuffer == ",,j":
-            self.languageSetting = LanguageSetting.JAPANESE
-        else:
-            spefic = False
-        if spefic:
-            self.send_switch()
-        else:
+        langMapping = {
+            ",,t": LanguageSetting.TRADITIONAL,
+            ",,c": LanguageSetting.SIMPLIFIED,
+            ",,ct": LanguageSetting.TAIWANESE,
+            ",,j": LanguageSetting.JAPANESE,
+        }
+        lang = langMapping.get(self.inputBuffer, None)
+        if lang is None:
             s = self.candidateNumber * (self.pageIndex - 1)
             e = s + self.candidateNumber
             keyList = self.candidateList[s:e]
@@ -165,6 +157,9 @@ class BoshiCore:
             self.inputBuffer = ""
             self.candidateList = []
             self.send_callback()
+        else:
+            self.languageSetting = lang
+            self.send_switch()
 
     def handle_left(self):
         self.pageIndex -= 1

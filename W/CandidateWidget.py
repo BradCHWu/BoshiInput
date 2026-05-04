@@ -19,26 +19,7 @@ class CandidateWidget(wx.Panel):
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(self.label, 1, wx.ALL | wx.ALIGN_CENTER, 5)
         self.SetSizer(sizer)
-        self.sel = 0
 
     def Update(self, keyList):
-        if not keyList:
-            s = ""
-            self.sel = 0
-        else:
-            sList = [f"{c}: {k}" for c, k in enumerate(keyList)]
-            sListCount = len(sList)
-            s = self.sel * 4
-            if sListCount > 4:
-                s = " ".join(sList[s : s + 4]) + "‥"
-            else:
-                s = " ".join(sList)
-        self.label.SetLabel(s)
-
-    def Next(self, keyList):
-        self.sel += 1
-        self.Update(keyList)
-
-    def Prev(self, keyList):
-        self.self -= 1
-        self.Update(keyList)
+        sList = [f"{c}: {k}" for c, k in enumerate(keyList)]
+        self.label.SetLabel(" ".join(sList))
