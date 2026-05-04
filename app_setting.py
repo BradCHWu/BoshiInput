@@ -1,10 +1,11 @@
 import base64
 import os
+import sys
 import tomllib
 
 
 def Header() -> str:
-    return "import base64\n\nfrom PySide6.QtGui import QPixmap"
+    return "import base64"
 
 
 def Name(name) -> str:
@@ -19,20 +20,36 @@ def Icon(icon) -> str:
     return f'def Icon() -> str:\n    return r"{icon}"'
 
 
-def Code() -> str:
-    return """def LoadPNG(png) -> QPixmap:
-    pixmap = QPixmap()
-    pixmap.loadFromData(base64.b64decode(png))
-    return pixmap
-"""
-
-
 def Author(author) -> str:
     return f'def Author() -> str:\n    return "{author}"'
 
 
 def Description(description) -> str:
     return f'def Description() -> str:\n    return "{description}"'
+
+
+def Code(module) -> str:
+    codeList = []
+    if module == "W":
+        codeList.append("import io")
+        codeList.append("import wx")
+        codeList.append("")
+        codeList.append("")
+        codeList.append("def LoadPNG(png) -> wx.Icon:")
+        codeList.append("    image_data = base64.b64decode(png)")
+        codeList.append("    stream = io.BytesIO(image_data)")
+        codeList.append("    image = wx.Image(stream, wx.BITMAP_TYPE_PNG)")
+        codeList.append("    icon = wx.Icon(wx.Bitmap(image))")
+        codeList.append("    return icon")
+    elif module == "Q":
+        codeList.append("from PySide6.QtGui import QPixmap")
+        codeList.append("")
+        codeList.append("")
+        codeList.append("def LoadPNG(png) -> QPixmap:")
+        codeList.append("    pixmap = QPixmap()")
+        codeList.append("    pixmap.loadFromData(base64.b64decode(png))")
+        codeList.append("    return pixmap")
+    return "\n".join(codeList)
 
 
 def __valid_png(folder):
@@ -67,37 +84,46 @@ def __icon_from_wx(png_path, icon_path, sizes):
     try:
         import wx
 
-        image = wx.Image(png_path, wx.BITMAP_TYPE_PNG)
+        app = wx.App()
+        if app.IsActive():
+            print("wx.App created for icon conversion")
+
+        image = wx.Image(png_path)
         if not image.IsOk():
             print(f"錯誤：無法載入圖片 '{png_path}'。")
             return False
-
-        # wxPython doesn't directly support ICO saving, but we can use PIL as primary
-        # For now, return False to fall back to other methods
-        return False
+        max_scale = max(size[0] for size in sizes)
+        scaled_image = image.Scale(max_scale, max_scale)
+        return scaled_image.SaveFile(icon_path, wx.BITMAP_TYPE_ICO)
     except ImportError:
         return False
 
 
-def PngToIco(png_path, ico_path, sizes=((16, 16), (32, 32), (48, 48))):
-    """
-    將 PNG 檔案轉換為 ICO 檔案。
+def __icon_from_pyside6(png_path, icon_path, sizes):
+    try:
+        import sys
+        from PySide6.QtGui import QImage, QPixmap
+        from PySide6.QtWidgets import QApplication
+        from PySide6.QtCore import Qt
 
-    Args:
-        png_path (str): 輸入的 PNG 檔案路徑。
-        ico_path (str): 輸出的 ICO 檔案路徑。
-        sizes (tuple): 包含要用於 ICO 檔案的尺寸元組，例如 ((16, 16), (32, 32))。
-    """
-    if not os.path.exists(png_path):
-        print(f"錯誤：找不到檔案 '{png_path}'。")
-        return
+        app = QApplication.instance()
+        if not app:
+            app = QApplication(sys.argv)
 
-    if __icon_from_pil(png_path, ico_path, sizes):
-        print(f"成功將 '{png_path}' 轉換為 '{ico_path}' by PIL")
-    elif __icon_from_wx(png_path, ico_path, sizes):
-        print(f"成功將 '{png_path}' 轉換為 '{ico_path}' by wxPython")
-    else:
-        print(f"錯誤：無法將 '{png_path}' 轉換為 '{ico_path}'")
+        image = QImage(png_path)
+        if image.isNull():
+            print(f"錯誤：無法載入圖片 '{png_path}'。")
+            return False
+        max_scale = max(size[0] for size in sizes)
+        scaled_pixmap = QPixmap.fromImage(image).scaled(
+            max_scale,
+            max_scale,
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
+        )
+        return scaled_pixmap.save(icon_path, "ICO")
+    except ImportError:
+        return False
 
 
 def __toml_config(toml):
@@ -131,7 +157,7 @@ def __extract_toml(toml):
     return config["project"]["name"], config["project"]["version"]
 
 
-def convert_image(toml, tool, name):
+def get_image_list(toml, tool, name):
     config = __toml_config(toml)
     if tool not in config:
         print(f"{tool} does not exist in {toml}")
@@ -154,7 +180,7 @@ def convert_image(toml, tool, name):
     return imageList
 
 
-def convert_icon(toml, tool, name, imageList):
+def convert_icon(toml, tool, name, imageList, module):
     config = __toml_config(toml)
     if tool not in config:
         print(f"{tool} does not exist in {toml}")
@@ -173,9 +199,18 @@ def convert_icon(toml, tool, name, imageList):
     for image in imageList:
         if icon_name not in os.path.splitext(image)[0]:
             continue
-        PngToIco(image, icon_name + ".ico")
+        png = image
+        ico = icon_name + ".ico"
+        sizes = ((32, 32), (64, 64))
+        if module == "W" and __icon_from_wx(png, ico, sizes):
+            print(f"成功使用 wxPython 將 '{png}' 轉換成 '{ico}'")
+        elif module == "Q" and __icon_from_pyside6(png, ico, sizes):
+            print(f"成功使用 PySide6 將 '{png}' 轉換成 '{ico}'")
+        elif __icon_from_pil(png, ico, sizes):
+            print(f"成功使用 PIL 將 '{png}' 轉換成 '{ico}'")
+        else:
+            print(f"錯誤：無法將 '{png}' 轉換為 '{ico}'")
         break
-
     return icon
 
 
@@ -218,11 +253,16 @@ TOOL = "tool"
 SETTING = "setting.py"
 
 if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Use 'app_setting W' or 'app_setting Q' to generate setting")
+        sys.exit()
+
+    MODULE = sys.argv[1]
     name, version = __extract_toml(TOML)
     if name and version:
-        imageList = convert_image(TOML, TOOL, name)
+        imageList = get_image_list(TOML, TOOL, name)
         if imageList:
-            icon = convert_icon(TOML, TOOL, name, imageList)
+            icon = convert_icon(TOML, TOOL, name, imageList, MODULE)
         author = convert_author(TOML, TOOL, name)
         description = convert_description(TOML, TOOL, name)
 
@@ -239,7 +279,7 @@ if __name__ == "__main__":
         if icon:
             codeList.append(Icon(icon))
         if imageList:
-            codeList.append(Code())
+            codeList.append(Code(MODULE))
             for image in imageList:
                 filename = os.path.split(image)[-1]
                 name = os.path.splitext(filename)[0]
@@ -248,5 +288,9 @@ if __name__ == "__main__":
                         name = name.replace(ch, "_")
                 codeList.append(f"png_{name} = {__png_to_base64(image)}")
 
-        with open(SETTING, "w", newline="", encoding="utf-8") as ofile:
+        cur = os.path.join(os.path.curdir, MODULE)
+        if not os.path.exists(cur):
+            os.makedirs(cur)
+        setting_file = os.path.join(MODULE, SETTING)
+        with open(setting_file, "w", newline="", encoding="utf-8") as ofile:
             ofile.write("\n\n\n".join(codeList))
