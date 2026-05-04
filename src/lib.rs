@@ -8,6 +8,7 @@ use std::thread;
 
 // 狀態追蹤
 static HOOK_RUNNING: AtomicBool = AtomicBool::new(false);
+static THREAD_SPAWNED: AtomicBool = AtomicBool::new(false);
 
 // 攔截狀態
 // 0: 不攔截
@@ -44,17 +45,21 @@ pub extern "C" fn start_keyboard_hook(callback: PythonCallback) {
     }
     HOOK_RUNNING.store(true, Ordering::SeqCst);
 
-    thread::spawn(|| {
-        if let Err(error) = grab(move |event| handle_event(event)) {
-            eprintln!("Hook Error: {:?}", error);
-        }
-    });
+    if !THREAD_SPAWNED.swap(true, Ordering::SeqCst) {
+        thread::spawn(|| {
+            if let Err(error) = grab(move |event| handle_event(event)) {
+                eprintln!("Hook Error: {:?}", error);
+                THREAD_SPAWNED.store(false, Ordering::SeqCst);
+            }
+        });
+    }
 }
 
 // 停止 Hook
 #[unsafe(no_mangle)]
 pub extern "C" fn stop_keyboard_hook() {
     HOOK_RUNNING.store(false, Ordering::SeqCst);
+    KEY_PRESSED.store(0, Ordering::SeqCst);
 }
 
 // 設置攔截啟用狀態
