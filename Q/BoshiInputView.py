@@ -7,9 +7,9 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
-from QT.LanguageWidget import LanguageWidget
-from QT.InputWidget import InputWidget
-from QT.CandidateWidget import CandidateWidget
+from Q.LanguageWidget import LanguageWidget
+from Q.InputWidget import InputWidget
+from Q.CandidateWidget import CandidateWidget
 
 
 class ViewWidget(Enum):

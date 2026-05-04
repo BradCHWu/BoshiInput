@@ -1,8 +1,8 @@
 from PySide6.QtWidgets import QApplication, QMessageBox
 from PySide6.QtCore import QSharedMemory
 
-from QT.MainFrame import MainFrame
-from QT.setting import Name
+from Q.MainFrame import MainFrame
+from Q.setting import Name
 
 
 class BoshiInputApp(QApplication):

@@ -5,8 +5,8 @@ from PySide6.QtWidgets import QMainWindow, QSystemTrayIcon, QMenu, QApplication
 from PySide6.QtCore import Qt, QPoint, QRect, QSize
 from PySide6.QtGui import QAction
 
-from QT.setting import LoadPNG, png_Boshi, Name
-from QT.BoshiInputView import BoshiInputView
+from setting import LoadPNG, png_Boshi, Name
+from Q.BoshiInputView import BoshiInputView
 
 from Config import config_manager
 

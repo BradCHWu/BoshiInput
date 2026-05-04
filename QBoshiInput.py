@@ -1,6 +1,6 @@
 import sys
 
-from QT.BoshiInputApp import BoshiInputApp
+from Q.BoshiInputApp import BoshiInputApp
 
 
 if __name__ == "__main__":

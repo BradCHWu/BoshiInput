@@ -78,7 +78,7 @@ def update_setting():
 if __name__ == "__main__":
     if not os.path.exists("W/setting.py"):
         update_setting()
-    import QT.setting as setting
+    import Q.setting as setting
 
     results = fill_version(setting.Name(), setting.Version())
     info_file = "file_version_info.txt"
