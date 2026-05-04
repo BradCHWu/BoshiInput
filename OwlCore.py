@@ -15,7 +15,7 @@ class LanguageSetting(Enum):
 
 
 class OwlCore:
-    HOOK_LIBRARY_PATH = "OwlKeyboard.dll" if os.name == "nt" else "keyboard.so"
+    HOOK_LIBRARY_PATH = "owl_keyboard.dll" if os.name == "nt" else "owl_keyboard.so"
     DEFAULT_MAPPING_FILE = "liu.boi"
     punctuationMapping = {
         "COMMA": ",",
