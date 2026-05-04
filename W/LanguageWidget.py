@@ -31,4 +31,4 @@ class LanguageWidget(wx.Panel):
             case "4":
                 self.label.SetLabel("日")
             case _:
-                self.label.SetText("英")
+                self.label.SetLabel("英")

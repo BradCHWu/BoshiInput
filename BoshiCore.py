@@ -115,7 +115,7 @@ class BoshiCore:
             return
 
         status = self.languageSetting.value
-        if not KeyboardGrab():
+        if not KeyboardGrab.GetIntercept():
             status = LanguageSetting.ENGLISH.value
         self.callback("SWITCH", [status])
 
@@ -180,12 +180,14 @@ class BoshiCore:
         if alpha == "v" and self.candidateList:
             self.inputBuffer += alpha
             tempCandidateList = mapping.get(self.inputBuffer, [])
-            if len(self.candidateList) < 2:
+            if len(tempCandidateList) > 0:
                 self.candidateList = tempCandidateList
-            else:
+            elif len(self.candidateList) > 1:
                 self.candidateList = [self.candidateList[1]]
-                if tempCandidateList:
-                    self.candidateList.extend(tempCandidateList)
+            else:
+                logging.warning(f"No candidate for {self.inputBuffer}")
+                self.inputBuffer = ""
+                self.candidateList = []
         else:
             self.inputBuffer += alpha
             self.candidateList = mapping.get(self.inputBuffer, [])
