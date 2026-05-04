@@ -84,7 +84,7 @@ def __icon_from_wx(png_path, icon_path, sizes):
         return False
 
 
-def PngToIco(png_path, ico_path, sizes=((16, 16), (32, 32), (48, 48))):
+def PngToIco(png_path, ico_path, sizes=((32, 32), (64, 64))):
     """
     將 PNG 檔案轉換為 ICO 檔案。
 
